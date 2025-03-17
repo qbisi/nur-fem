@@ -1,0 +1,7 @@
+.venv
+.direnv
+.envrc
+result*
+outputs
+source
+flake.lock
