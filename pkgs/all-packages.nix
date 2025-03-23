@@ -23,6 +23,9 @@
           inherit (self) callPackage;
           directory = ./by-name;
         }
+        // {
+          petscPackages = self.petsc.petscPackages;
+        }
       );
     };
 }
