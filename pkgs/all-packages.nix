@@ -25,6 +25,7 @@
         }
         // {
           petscPackages = self.petsc.petscPackages;
+          python3Packages = config.legacyPackages.python312Packages;
         }
       );
     };

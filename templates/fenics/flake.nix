@@ -34,11 +34,6 @@
               inherit system;
               overlays = [
                 inputs.nur-fem.overlays.default
-                (self: prev: {
-                  petsc = prev.petsc.override {
-                    withParmetis = true;
-                  };
-                })
               ];
               config = {
                 allowUnfree = true;
@@ -51,7 +46,7 @@
               let
                 python-env = pkgs.jupyter.withPackages (
                   ps: with ps; [
-                    firedrake
+                    fenics-dolfinx
                     matplotlib
                     ipykernel
                     ipympl
@@ -68,7 +63,6 @@
                 shellHook = ''
                   rm .venv -rf
                   ln -s ${python-env} .venv
-                  export VIRTUAL_ENV=$HOME
                 '';
               };
           };

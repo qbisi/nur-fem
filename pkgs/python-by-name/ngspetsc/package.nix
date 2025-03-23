@@ -9,6 +9,7 @@
   pytestCheckHook,
   ngsolve,
   pytest-mpi,
+  slepc4py,
 }:
 
 buildPythonPackage rec {
@@ -47,12 +48,7 @@ buildPythonPackage rec {
     pytestCheckHook
     ngsolve
     pytest-mpi
-    # slepc
-  ];
-
-  disabledTests = [
-    # require slepc
-    "test_eps.py"
+    slepc4py
   ];
 
   meta = {
