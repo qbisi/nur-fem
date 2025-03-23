@@ -80,7 +80,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     substituteInPlace ng/ng.tcl ng/onetcl.cpp \
       --replace-fail "libnggui" "$out/lib/libnggui" \
-      --replace-fail "{dir}/ngsolve.tcl" "{dir}/../lib/ngsolve.tcl"
+      --replace-fail "{dir}/ngsolve.tcl" "{dir}/../libexec/ngsolve.tcl"
   '';
 
   nativeBuildInputs = [

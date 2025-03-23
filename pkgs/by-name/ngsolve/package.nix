@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  replaceVars,
   makeWrapper,
   gfortran,
   mpi,
@@ -38,7 +39,7 @@ let
     ++ lib.optional advSimdSupport "-march=armv8.3-a+simd"
     # disalbe some compiler warning for aarch64 specified target
     # https://gcc.gnu.org/gcc-10/changes.html
-    ++ lib.optional (stdenv.hostPlatform.isAarch64 && stdenv.hostPlatform.isLinux) "-Wno-psabi"
+    # ++ lib.optional (stdenv.hostPlatform.isAarch64 && stdenv.hostPlatform.isLinux) "-Wno-psabi"
   );
   wrapPythonPath = "$out/${python3Packages.python.sitePackages}:${
     python3Packages.makePythonPath (
@@ -63,8 +64,12 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   patches = [
+    # Add neccessary python path for standalone gui app netgen.
+    (replaceVars ./tcl-script-add-python-path.patch {
+      WRAP_PYTHONPATH = wrapPythonPath;
+    })
     # looks for a shared mumps library
-    ./fix-findMumps.patch
+    ./fix-find-mumps.patch
   ];
 
   postPatch = ''
@@ -125,25 +130,12 @@ stdenv.mkDerivation (finalAttrs: {
 
   propagatedUserEnvPkgs = [ python3Packages.netgen-mesher ];
 
-  # The tcl script ngsolve.tcl under bin loads the ngsolve library into Netgen GUI application.
-  # Netgen will try to source the ngsolve.tcl script via iterate over $PATH envrionment.
-  # However, in python-env, e.g.
-  # python3.withPackages (ps: with ps; [ ngsolve ]),
-  # regular files under bin are removed or wrapped.
-  # See https://github.com/NixOS/nixpkgs/blob/f6f0df403b6e75c03a2017c2ea761dda6ca4e01b/pkgs/development/interpreters/python/wrapper.nix#L42-L46
-  # As a result, Netgen will fail to source the wrapped ngsolve.tcl script even if we make ngsolve.tcl exectable.
-  # Since ngsolve.tcl serves as a source script rather than a exectable
-  # I would like to move ngsolve.tcl to the lib directory, and modify the way how netgen search for ngsolve.tcl i.e.
-  # via iterate over dir/../lib for each dir in $PATH.
+  # Ngsolve.tcl is a tcl script to be sourced by netgen and share not be binary wrapped.
+  # It should not be placed in bin directory as python-env will wrap every executable in bin.
+  # We move it into $out/libexec and netgen will look for ngsolve.tcl in dir/../libexec for each dir in $PATH.
   postFixup = ''
-    cat >> $out/lib/ngsolve.tcl <<< "
-    if {[info exists env(PYTHONPATH)]} {
-        set env(PYTHONPATH) $::env(PYTHONPATH):${wrapPythonPath}
-    } else {
-      set env(PYTHONPATH) ${wrapPythonPath}
-    }"
-    cat $out/bin/ngsolve.tcl >> $out/lib/ngsolve.tcl
-    rm $out/bin/ngsolve.tcl
+    mkdir $out/libexec
+    mv $out/bin/ngsolve.tcl $out/libexec
     wrapProgram  $out/bin/ngspy --set PYTHONPATH "${wrapPythonPath}:\$PYTHONPATH"
   '';
 
