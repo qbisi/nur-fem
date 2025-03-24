@@ -70,39 +70,36 @@ assert (withMumps && mpiSupport) -> withScalapack;
 assert withHypre -> mpiSupport;
 
 let
-  petscPackages = lib.recurseIntoAttrs (
-    lib.makeScope newScope (self: {
-      inherit
-        # global override options
-        mpiSupport
-        fortranSupport
-        pythonSupport
-        precision
-        ;
-      enableMpi = mpiSupport;
+  petscPackages = lib.makeScope newScope (self: {
+    inherit
+      # global override options
+      mpiSupport
+      fortranSupport
+      pythonSupport
+      precision
+      ;
+    enableMpi = self.mpiSupport;
 
-      petscPackages = self;
-      # external libraries
-      mpi = self.callPackage mpi.override { };
-      blas = self.callPackage blas.override { };
-      lapack = self.callPackage lapack.override { };
-      hdf5 = self.callPackage hdf5.override {
-        fortran = gfortran;
-        cppSupport = !mpiSupport;
-      };
-      metis = self.callPackage metis.override { };
-      parmetis = self.callPackage parmetis.override { };
-      scotch = self.callPackage scotch.override { };
-      scalapack = self.callPackage scalapack.override { };
-      mumps = self.callPackage mumps.override { };
-      p4est = self.callPackage p4est.override { };
-      petsc = self.callPackage petsc.override { };
-      hypre = self.callPackage hypre.override { };
-      fftw = self.callPackage fftw.override { };
-      superlu = self.callPackage superlu.override { };
-      suitesparse = self.callPackage suitesparse.override { };
-    })
-  );
+    petscPackages = self;
+    # external libraries
+    mpi = self.callPackage mpi.override { };
+    blas = self.callPackage blas.override { };
+    lapack = self.callPackage lapack.override { };
+    hdf5 = self.callPackage hdf5.override {
+      fortran = gfortran;
+      cppSupport = !mpiSupport;
+    };
+    metis = self.callPackage metis.override { };
+    parmetis = self.callPackage parmetis.override { };
+    scotch = self.callPackage scotch.override { };
+    scalapack = self.callPackage scalapack.override { };
+    mumps = self.callPackage mumps.override { };
+    p4est = self.callPackage p4est.override { };
+    hypre = self.callPackage hypre.override { };
+    fftw = self.callPackage fftw.override { };
+    superlu = self.callPackage superlu.override { };
+    suitesparse = self.callPackage suitesparse.override { };
+  });
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "petsc";
@@ -239,8 +236,12 @@ stdenv.mkDerivation (finalAttrs: {
       mpiSupport
       pythonSupport
       fortranSupport
-      petscPackages
       ;
+    petscPackages = petscPackages.overrideScope (
+      final: prev: {
+        petsc = finalAttrs.finalPackage;
+      }
+    );
     tests =
       {
         serial = petsc.override {
@@ -257,12 +258,12 @@ stdenv.mkDerivation (finalAttrs: {
 
   setupHook = ./setup-hook.sh;
 
-  meta = with lib; {
+  meta = {
     description = "Portable Extensible Toolkit for Scientific computation";
     homepage = "https://petsc.org/release/";
-    license = licenses.bsd2;
+    license = lib.licenses.bsd2;
     platforms = lib.platforms.unix;
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       cburstedde
       qbisi
     ];

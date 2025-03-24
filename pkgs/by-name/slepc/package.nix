@@ -7,7 +7,6 @@
   python3Packages,
   arpack-mpi,
   petsc,
-  petscPackages,
   mpiCheckPhaseHook,
   pythonSupport ? false,
   withExamples ? false,
@@ -66,7 +65,6 @@ stdenv.mkDerivation (finalAttrs: {
     ];
 
   buildInputs =
-    with petscPackages;
     [
       mpi
     ]
