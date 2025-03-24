@@ -85,6 +85,10 @@ buildPythonPackage rec {
     mpi
   ];
 
+  buildInputs = [
+    petsc4py.petscPackages.hdf5
+  ];
+
   dependencies = [
     siphash24
     decorator
