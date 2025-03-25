@@ -44,7 +44,7 @@
 
         flake = {
           hydraJobs = {
-            inherit (self) packages;
+            packages = removeAttrs packages [ "x86-64_darwin" ];
           };
 
           templates = {
