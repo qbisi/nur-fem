@@ -15,7 +15,6 @@
         systems = [
           "x86_64-linux"
           "aarch64-linux"
-          "x86_64-darwin"
           "aarch64-darwin"
         ];
 
@@ -36,24 +35,21 @@
 
             overlayAttrs = config.legacyPackages;
 
-            packages =
-              (lib.packagesFromDirectoryRecursive {
+            hydraJobs = {
+              packages = lib.packagesFromDirectoryRecursive {
                 inherit (self'.legacyPackages) callPackage;
                 directory = ./pkgs/by-name;
-              })
-              // {
-                python312Packages = lib.packagesFromDirectoryRecursive {
-                  inherit (self'.legacyPackages.python312Packages) callPackage;
-                  directory = ./pkgs/python-by-name;
-                };
               };
+              python312Packages = lib.packagesFromDirectoryRecursive {
+                inherit (self'.legacyPackages.python312Packages) callPackage;
+                directory = ./pkgs/python-by-name;
+              };
+            };
           };
+
+        transposition.hydraJobs.adHoc = true;
 
         flake = {
-          hydraJobs = {
-            packages = removeAttrs self.packages [ "x86-64_darwin" ];
-          };
-
           templates = {
             firedrake = {
               path = ./templates/firedrake;
