@@ -7,6 +7,7 @@
   python3Packages,
   arpack-mpi,
   petsc,
+  mpi,
   mpiCheckPhaseHook,
   pythonSupport ? false,
   withExamples ? false,
