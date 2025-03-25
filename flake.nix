@@ -36,17 +36,22 @@
 
             overlayAttrs = config.legacyPackages;
 
-            packages = (lib.packagesFromDirectoryRecursive {
-              inherit (self'.legacyPackages) callPackage;
-              directory = ./pkgs/by-name;
-            }) // {
-              python312Packages =
-            };
+            packages =
+              (lib.packagesFromDirectoryRecursive {
+                inherit (self'.legacyPackages) callPackage;
+                directory = ./pkgs/by-name;
+              })
+              // {
+                python312Packages = lib.packagesFromDirectoryRecursive {
+                  inherit (self'.legacyPackages.python312Packages) callPackage;
+                  directory = ./pkgs/python-by-name;
+                };
+              };
           };
 
         flake = {
           hydraJobs = {
-            packages = removeAttrs packages [ "x86-64_darwin" ];
+            packages = removeAttrs self.packages [ "x86-64_darwin" ];
           };
 
           templates = {
