@@ -9,36 +9,51 @@
 
   outputs =
     inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ];
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } (
+      { lib, self, ... }@top:
+      {
+        systems = [
+          "x86_64-linux"
+          "aarch64-linux"
+          "x86_64-darwin"
+          "aarch64-darwin"
+        ];
 
-      imports = [
-        inputs.flake-parts.flakeModules.easyOverlay
-        ./pkgs/all-packages.nix
-      ];
+        imports = [
+          inputs.flake-parts.flakeModules.easyOverlay
+          ./pkgs/all-packages.nix
+        ];
 
-      perSystem =
-        {
-          config,
-          pkgs,
-          ...
-        }:
-        {
-          formatter = pkgs.nixfmt-rfc-style;
+        perSystem =
+          {
+            config,
+            pkgs,
+            self',
+            ...
+          }:
+          {
+            formatter = pkgs.nixfmt-rfc-style;
 
-          overlayAttrs = config.legacyPackages;
+            overlayAttrs = config.legacyPackages;
+
+            packages = lib.packagesFromDirectoryRecursive {
+              inherit (self'.legacyPackages) callPackage;
+              directory = ./pkgs/by-name;
+            };
+          };
+
+        flake = {
+          hydraJobs = {
+            inherit (self) packages;
+          };
+
+          templates = {
+            firedrake = {
+              path = ./templates/firedrake;
+              description = "firdrake template";
+            };
+          };
         };
-
-      flake.templates = {
-        firedrake = {
-          path = ./templates/firedrake;
-          description = "firdrake template";
-        };
-      };
-    };
+      }
+    );
 }
