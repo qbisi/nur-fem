@@ -36,9 +36,11 @@
 
             overlayAttrs = config.legacyPackages;
 
-            packages = lib.packagesFromDirectoryRecursive {
+            packages = (lib.packagesFromDirectoryRecursive {
               inherit (self'.legacyPackages) callPackage;
               directory = ./pkgs/by-name;
+            }) // {
+              python312Packages =
             };
           };
 
