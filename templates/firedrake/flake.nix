@@ -1,13 +1,10 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nur-fem.url = "github:qbisi/nur-fem";
+    nixpkgs.follows = "nur-fem/nixpkgs";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
-    };
-    nur-fem = {
-      url = "github:qbisi/nur-fem";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
