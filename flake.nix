@@ -15,7 +15,8 @@
         systems = [
           "x86_64-linux"
           "aarch64-linux"
-          # "aarch64-darwin"
+          "x86_64-darwin"
+          "aarch64-darwin"
         ];
 
         imports = [
@@ -36,14 +37,18 @@
             overlayAttrs = config.legacyPackages;
 
             hydraJobs = {
-              packages = lib.packagesFromDirectoryRecursive {
-                inherit (self'.legacyPackages) callPackage;
-                directory = ./pkgs/by-name;
-              };
-              python312Packages = lib.packagesFromDirectoryRecursive {
-                inherit (self'.legacyPackages.python312Packages) callPackage;
-                directory = ./pkgs/python-by-name;
-              };
+              packages = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
+                lib.packagesFromDirectoryRecursive {
+                  inherit (self'.legacyPackages) callPackage;
+                  directory = ./pkgs/by-name;
+                }
+              );
+              python312Packages = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
+                lib.packagesFromDirectoryRecursive {
+                  inherit (self'.legacyPackages.python312Packages) callPackage;
+                  directory = ./pkgs/python-by-name;
+                }
+              );
             };
           };
 
