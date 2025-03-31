@@ -2,6 +2,7 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
+  python,
 
   # build-system
   build,
@@ -32,6 +33,9 @@
   pyadjoint-ad,
   loopy,
   libsupermesh,
+
+  # propagatedUserEnvPkgs
+  glibc,
 
   # lint
   flake8,
@@ -150,9 +154,11 @@ buildPythonPackage rec {
   propagatedUserEnvPkgs = [
     mpi
     (lib.getDev mpi)
+    (lib.getBin glibc)
   ];
 
   postInstall = ''
+    install -D ${./logo-64x64.ico} $out/${python.sitePackages}/firedrake/icons/logo-64x64.png
     export HOME="$(mktemp -d)"
   '';
 
