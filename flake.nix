@@ -69,7 +69,7 @@
 
           nixosModules.default = {
             nixpkgs.overlays = [
-              self.overlays.default or (final: prev: { })
+              self.overlays.pkgs-fem
             ];
           };
 
