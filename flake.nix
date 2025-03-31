@@ -10,7 +10,12 @@
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } (
-      { lib, self, ... }@top:
+      {
+        lib,
+        self,
+        withSystem,
+        ...
+      }@top:
       {
         systems = [
           "x86_64-linux"
@@ -67,6 +72,15 @@
               self.overlays.default or (final: prev: { })
             ];
           };
+
+          overlays.pkgs-fem =
+            final: prev:
+            withSystem prev.stdenv.hostPlatform.system (
+              { config, ... }:
+              {
+                pkgs-fem = config.legacyPackages;
+              }
+            );
         };
       }
     );
