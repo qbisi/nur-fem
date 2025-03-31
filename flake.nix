@@ -61,6 +61,12 @@
               description = "firdrake template";
             };
           };
+
+          nixosModules.default = {
+            nixpkgs.overlays = [
+              self.overlays.default or (final: prev: { })
+            ];
+          };
         };
       }
     );
