@@ -54,6 +54,9 @@
                   directory = ./pkgs/python-by-name;
                 }
               );
+              tests = lib.mapAttrs (_: v: lib.mapAttrs (_: package: { tests = package.tests or { }; }) v) (
+                builtins.removeAttrs config.hydraJobs [ "tests" ]
+              );
             };
           };
 
