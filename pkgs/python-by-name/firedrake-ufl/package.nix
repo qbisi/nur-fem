@@ -9,15 +9,15 @@
 }:
 
 buildPythonPackage rec {
-  version = "20250218.0";
+  version = "0-unstable-2025-03-25";
   pname = "firedrake-ufl";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "firedrakeproject";
     repo = "ufl";
-    tag = "Firedrake_${version}";
-    hash = "sha256-qIoXyRoPLhq1teqKhdDv1HUitVz9JfIwxJMpAXteozc=";
+    rev = "07d8a76efc1f8d6075fb33d8c55eff0b2999eaca";
+    hash = "sha256-cJKsyB1QXf+ECkctpfyZRO0K3J53pMZwP0PdOthGp2c=";
   };
 
   build-system = [
