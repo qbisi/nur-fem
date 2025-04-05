@@ -194,7 +194,6 @@ buildPythonPackage rec {
             [
               firedrake
               mpiCheckPhaseHook
-              writableTmpDirAsHomeHook
             ]
             ++ propagatedUserEnvPkgs
             ++ optional-dependencies.test;
@@ -203,14 +202,16 @@ buildPythonPackage rec {
           runHook preCheck
 
           set +e
+          export HOME="$(mktemp -d)"
+          export VIRTUAL_ENV="$HOME"
 
-          cd tests
+          cd $src/tests
           echo "testing firedrake ..."
-          pytest -n auto --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v firedrake
+          pytest -n auto -m "not parallel or parallel[1]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v firedrake
           echo "testing tsfc ..."
-          pytest -n auto --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v tsfc
+          pytest -n auto -m "not parallel or parallel[1]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v tsfc
           echo "testing pyop2 ..."
-          pytest -n auto -m "not parallel" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
+          pytest -n auto -m "not parallel or parallel[1]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
           mpiexec -n 2 pytest -m "parallel[2]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
           mpiexec -n 3 pytest -m "parallel[3]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
 
