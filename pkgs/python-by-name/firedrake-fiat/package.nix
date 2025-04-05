@@ -67,7 +67,6 @@ buildPythonPackage rec {
       Brezzi-Douglas-Marini and Nedelec are supported on triangles and tetrahedra.
       Upcoming versions will also support Hermite and nonconforming elements.
     '';
-    changelog = "https://github.com/firedrakeproject/fiat/releases/tag/${src.tag}";
     license = lib.licenses.lgpl3;
     maintainers = with lib.maintainers; [ qbisi ];
   };

@@ -49,7 +49,6 @@ buildPythonPackage rec {
       defines a flexible interface for choosing finite element spaces and defining
       expressions for weak forms in a notation close to mathematical notation.
     '';
-    changelog = "https://github.com/firedrakeproject/ufl/releases/tag/${src.tag}";
     license = lib.licenses.lgpl3;
     maintainers = with lib.maintainers; [ qbisi ];
   };

@@ -239,11 +239,11 @@ stdenv.mkDerivation (finalAttrs: {
       pythonSupport
       fortranSupport
       ;
-    petscPackages = lib.dontRecurseIntoAttrs (petscPackages.overrideScope (
+    petscPackages = petscPackages.overrideScope (
       final: prev: {
         petsc = finalAttrs.finalPackage;
       }
-    ));
+    );
     tests =
       {
         serial = petsc.override {

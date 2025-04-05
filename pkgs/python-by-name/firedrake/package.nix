@@ -221,7 +221,6 @@ buildPythonPackage rec {
   meta = {
     homepage = "http://www.firedrakeproject.org";
     description = "Automated system for the portable solution of partial differential equations using the finite element method (FEM)";
-    changelog = "https://github.com/firedrakeproject/firedrake/releases/tag/${src.tag}";
     license = lib.licenses.lgpl3;
     maintainers = with lib.maintainers; [ qbisi ];
   };

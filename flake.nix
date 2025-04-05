@@ -41,7 +41,7 @@
 
             overlayAttrs = config.legacyPackages;
 
-            hydraJobs = lib.recurseIntoAttrs {
+            hydraJobs = {
               packages = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
                 lib.packagesFromDirectoryRecursive {
                   inherit (self'.legacyPackages) callPackage;
