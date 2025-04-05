@@ -152,9 +152,11 @@ buildPythonPackage rec {
   };
 
   propagatedUserEnvPkgs = [
-    mpi
-    (lib.getDev mpi)
-    (lib.getBin glibc)
+    mpi # require mpiexec
+    (lib.getDev mpi) # require mpicc
+    (lib.getBin glibc) # require ldd
+    petsc4py.petscPackages.blas
+    petsc4py.petscPackages.lapack
   ];
 
   postInstall = ''

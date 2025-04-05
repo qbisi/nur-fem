@@ -7,6 +7,7 @@
   bash,
   pkg-config,
   gfortran,
+  bison,
   mpi, # generic mpi dependency
   mpiCheckPhaseHook,
   python3,
@@ -26,7 +27,7 @@
   # External libraries options
   withHdf5 ? withCommonDeps,
   withMetis ? withCommonDeps,
-  withZlib ? withP4est,
+  withZlib ? (withP4est || withPtscotch),
   withScalapack ? withCommonDeps && mpiSupport,
   withParmetis ? withFullDeps, # parmetis is unfree
   withPtscotch ? withCommonDeps && mpiSupport,
@@ -64,7 +65,7 @@ assert withP4est -> (mpiSupport && withZlib);
 # Package parmetis depend on metis and mpi support
 assert withParmetis -> (withMetis && mpiSupport);
 
-assert withPtscotch -> mpiSupport;
+assert withPtscotch -> (mpiSupport && withZlib);
 assert withScalapack -> mpiSupport;
 assert (withMumps && mpiSupport) -> withScalapack;
 assert withHypre -> mpiSupport;
@@ -103,11 +104,11 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "petsc";
-  version = "3.22.4";
+  version = "3.23.0";
 
   src = fetchzip {
     url = "https://web.cels.anl.gov/projects/petsc/download/release-snapshots/petsc-${finalAttrs.version}.tar.gz";
-    hash = "sha256-8WV1ylXytkhiNa7YpWSOIpSvzLCCjdVVe5SiGfhicas=";
+    hash = "sha256-OcI4iyDOR0YTVV+JoOhbfutoW00EmfapNaMnD/JJFsI=";
   };
 
   strictDeps = true;
@@ -117,6 +118,7 @@ stdenv.mkDerivation (finalAttrs: {
       python3
       gfortran
       pkg-config
+      bison
     ]
     ++ lib.optional mpiSupport mpi
     ++ lib.optionals pythonSupport [
