@@ -18,7 +18,6 @@
       }@top:
       {
         systems = [
-          "i686-linux"
           "x86_64-linux"
           "aarch64-linux"
           "x86_64-darwin"
@@ -74,14 +73,9 @@
             ];
           };
 
-          overlays.pkgs-fem =
-            final: prev:
-            withSystem prev.stdenv.hostPlatform.system (
-              { config, ... }:
-              {
-                pkgs-fem = config.legacyPackages;
-              }
-            );
+          overlays.pkgs-fem = final: prev: {
+            pkgs-fem = self."${prev.stdenv.hostPlatform.system}".legacyPackages;
+          };
         };
       }
     );
