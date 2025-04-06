@@ -12,15 +12,15 @@
   vtk,
 }:
 buildPythonPackage rec {
-  version = "0-unstable-2025-03-14";
+  version = "0-unstable-2025-04-01";
   pname = "irksome";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "firedrakeproject";
     repo = "irksome";
-    rev = "73967a77f31a5518e9ee9d74ad8e6351ca98ceb4";
-    hash = "sha256-v+hErZPxF8IL8PEDJJgj1TLqcAeouzFgAfX8pfOrKdo=";
+    rev = "6190331e01990dc9793448ea611b80e41a9b4bfd";
+    hash = "sha256-++z+RTIM2mdi5NdaD6XR2Bh0HkuBuOYBotGtdZn/J0s=";
   };
 
   build-system = [

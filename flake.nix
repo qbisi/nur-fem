@@ -49,6 +49,16 @@
 
             formatter = pkgs.nixfmt-rfc-style;
 
+            packages =
+              (lib.packagesFromDirectoryRecursive {
+                inherit (self'.legacyPackages) callPackage;
+                directory = ./pkgs/by-name;
+              })
+              // (lib.packagesFromDirectoryRecursive {
+                inherit (self'.legacyPackages.python312Packages) callPackage;
+                directory = ./pkgs/python-by-name;
+              });
+
             overlayAttrs = config.legacyPackages;
 
             hydraJobs = {
