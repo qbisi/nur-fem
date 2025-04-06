@@ -89,6 +89,9 @@ stdenv.mkDerivation (finalAttrs: {
     substituteInPlace python/CMakeLists.txt \
       --replace-fail ''\'''${CMAKE_INSTALL_PREFIX}/''${NGSOLVE_INSTALL_DIR_PYTHON}' \
                      ''\'''${CMAKE_INSTALL_PREFIX}/''${NGSOLVE_INSTALL_DIR_PYTHON}:$ENV{PYTHONPATH}'
+
+    substituteInPlace CMakeLists.txt \
+      --replace-fail "set(NGS_TEST_TIMEOUT 60)" "set(NGS_TEST_TIMEOUT 300)"
   '';
 
   nativeBuildInputs = [

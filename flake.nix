@@ -33,10 +33,20 @@
           {
             config,
             pkgs,
+            system,
             self',
             ...
           }:
           {
+            _module.args = {
+              pkgs = import inputs.nixpkgs {
+                inherit system;
+                config = {
+                  allowUnfree = true;
+                };
+              };
+            };
+
             formatter = pkgs.nixfmt-rfc-style;
 
             overlayAttrs = config.legacyPackages;

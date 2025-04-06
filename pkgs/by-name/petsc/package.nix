@@ -274,7 +274,6 @@ stdenv.mkDerivation (finalAttrs: {
       // lib.optionalAttrs stdenv.hostPlatform.isLinux {
         fullDeps = petsc.override {
           withFullDeps = true;
-          withParmetis = false;
         };
       };
   };
