@@ -53,6 +53,7 @@
 
   # tests
   ipympl,
+  vtk,
   # pytest-split,
   pylit,
   nbval,
@@ -139,6 +140,7 @@ buildPythonPackage rec {
     ];
 
     test = [
+      vtk
       pylit
       nbval
       pytest
