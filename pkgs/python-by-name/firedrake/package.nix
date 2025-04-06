@@ -199,10 +199,12 @@ buildPythonPackage rec {
           runHook preCheck
 
           set +e
+          mkdir -p $out/tests
+          cp -r $src/tests/* $out/tests
+          cd $out/tests
           export HOME="$(mktemp -d)"
           export VIRTUAL_ENV="$HOME"
 
-          cd $src/tests
           echo "testing firedrake ..."
           pytest -n auto -m "not parallel or parallel[1]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v firedrake
           echo "testing tsfc ..."
