@@ -9,6 +9,7 @@
   pytestCheckHook,
   mpiCheckPhaseHook,
   pylit,
+  vtk,
 }:
 buildPythonPackage rec {
   version = "0-unstable-2025-03-14";
@@ -41,6 +42,7 @@ buildPythonPackage rec {
     mpiCheckPhaseHook
     firedrake
     pylit
+    vtk
   ];
 
   meta = {
