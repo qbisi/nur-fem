@@ -199,11 +199,12 @@ buildPythonPackage rec {
           runHook preCheck
 
           set +e
-          mkdir -p $out
-          cp -r $src/{tests,doc} $out
+          mkdir -p $out/tmp
+          export TMPDIR=$out/tmp
+          export HOME=$TMPDIR
+          export VIRTUAL_ENV=$HOME
+          cp -r $src/* $out
           cd $out/tests
-          export HOME="$(mktemp -d)"
-          export VIRTUAL_ENV="$HOME"
 
           echo "testing firedrake ..."
           pytest -n auto -m "not parallel or parallel[1]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v firedrake
@@ -213,12 +214,6 @@ buildPythonPackage rec {
           pytest -n auto -m "not parallel or parallel[1]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
           mpiexec -n 2 pytest -m "parallel[2]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
           mpiexec -n 3 pytest -m "parallel[3]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
-
-          find /build/pyop2-tempcache-uid1000 -type f -name "*.err" | while read -r file; do
-              echo "===== Dumping: $file ====="
-              cat "$file"
-              echo -e "\n"
-          done
 
           runHook postCheck
         '';
