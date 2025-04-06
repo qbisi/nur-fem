@@ -199,8 +199,8 @@ buildPythonPackage rec {
           runHook preCheck
 
           set +e
-          mkdir -p $out/tests
-          cp -r $src/tests/* $out/tests
+          mkdir -p $out
+          cp -r $src/{tests,doc} $out
           cd $out/tests
           export HOME="$(mktemp -d)"
           export VIRTUAL_ENV="$HOME"
