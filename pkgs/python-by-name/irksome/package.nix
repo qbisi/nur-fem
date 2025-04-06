@@ -2,6 +2,7 @@
   lib,
   fetchFromGitHub,
   buildPythonPackage,
+  writableTmpDirAsHomeHook,
   setuptools,
   firedrake,
   pytest-xdist,
@@ -22,10 +23,10 @@ buildPythonPackage rec {
 
   build-system = [
     setuptools
+    writableTmpDirAsHomeHook
   ];
 
   postInstall = ''
-    export HOME="$(mktemp -d)"
     export VIRTUAL_ENV="$HOME"
   '';
 

@@ -17,6 +17,7 @@
   debug ? false,
   scalarType ? "real",
   precision ? "double",
+  isILP64 ? false,
   mpiSupport ? true,
   fortranSupport ? true,
   pythonSupport ? false, # petsc python binding
@@ -39,8 +40,7 @@
   withSuitesparse ? withCommonDeps,
 
   # External libraries
-  blas,
-  lapack,
+  openblas,
   hdf5,
   metis,
   parmetis,
@@ -56,6 +56,7 @@
 
   # Used in passthru.tests
   petsc,
+  mkl,
 }:
 assert withFullDeps -> withCommonDeps;
 
@@ -72,20 +73,21 @@ assert withHypre -> mpiSupport;
 
 let
   petscPackages = lib.makeScope newScope (self: {
+    # global override options
     inherit
-      # global override options
       mpiSupport
       fortranSupport
       pythonSupport
       precision
+      isILP64
       ;
     enableMpi = self.mpiSupport;
+    blas64 = self.isILP64;
 
     petscPackages = self;
     # external libraries
     mpi = self.callPackage mpi.override { };
-    blas = self.callPackage blas.override { };
-    lapack = self.callPackage lapack.override { };
+    openblas = self.callPackage openblas.override { };
     hdf5 = self.callPackage hdf5.override {
       fortran = gfortran;
       cppSupport = !mpiSupport;
@@ -127,10 +129,7 @@ stdenv.mkDerivation (finalAttrs: {
     ];
 
   buildInputs =
-    [
-      petscPackages.blas
-      petscPackages.lapack
-    ]
+    [ petscPackages.openblas ]
     ++ lib.optional withZlib zlib
     ++ lib.optional withHdf5 petscPackages.hdf5
     ++ lib.optional withP4est petscPackages.p4est
@@ -161,8 +160,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   configureFlags =
     [
-      "--with-blas=1"
-      "--with-lapack=1"
+      "--with-blaslapack=1"
       "--with-scalar-type=${scalarType}"
       "--with-precision=${precision}"
       "--with-mpi=${if mpiSupport then "1" else "0"}"
@@ -204,6 +202,26 @@ stdenv.mkDerivation (finalAttrs: {
 
   enableParallelBuilding = true;
 
+  postInstall = lib.concatStringsSep "\n" (
+    map (
+      package:
+      let
+        pname = package.pname or package.name;
+        prefix =
+          if (pname == "openblas" || pname == "mkl") then
+            "BLASLAPACK"
+          else
+            # remove pname suffix after "-"
+            lib.toUpper (toString (lib.match "([^\\-]+)-?.*" pname));
+      in
+      ''
+        substituteInPlace $out/lib/petsc/conf/petscvariables \
+          --replace-fail "${prefix}_INCLUDE =" "${prefix}_INCLUDE = -I${lib.getDev package}/include" \
+          --replace-fail "${prefix}_LIB =" "${prefix}_LIB = -L${lib.getLib package}/lib"
+      ''
+    ) finalAttrs.buildInputs
+  );
+
   # This is needed as the checks need to compile and link the test cases with
   # -lpetsc, which is not available in the checkPhase, which is executed before
   # the installPhase. The installCheckPhase comes after the installPhase, so
@@ -235,6 +253,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru = {
     inherit
+      isILP64
       mpiSupport
       pythonSupport
       fortranSupport
@@ -248,6 +267,9 @@ stdenv.mkDerivation (finalAttrs: {
       {
         serial = petsc.override {
           mpiSupport = false;
+        };
+        mkl = petsc.override {
+          openblas = mkl;
         };
       }
       // lib.optionalAttrs stdenv.hostPlatform.isLinux {

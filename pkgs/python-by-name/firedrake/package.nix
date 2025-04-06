@@ -105,7 +105,7 @@ buildPythonPackage rec {
     decorator
     cachetools
     mpi4py
-    h5py
+    (h5py.override { hdf5 = petsc4py.petscPackages.hdf5; })
     petsc4py
     numpy
     packaging
@@ -162,8 +162,6 @@ buildPythonPackage rec {
     mpi # require mpiexec
     (lib.getDev mpi) # require mpicc
     (lib.getBin glibc) # require ldd
-    petsc4py.petscPackages.blas
-    petsc4py.petscPackages.lapack
   ];
 
   postInstall = ''

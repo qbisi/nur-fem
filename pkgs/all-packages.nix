@@ -24,6 +24,9 @@
           directory = ./by-name;
         }
         // {
+          config = pkgs.config // {
+            allowUnfree = true;
+          };
           petscPackages = self.petsc.petscPackages;
           python3Packages = config.legacyPackages.python312Packages;
         }
