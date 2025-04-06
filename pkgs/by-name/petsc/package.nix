@@ -56,6 +56,7 @@
 
   # Used in passthru.tests
   petsc,
+  mpich,
   mkl,
 }:
 assert withFullDeps -> withCommonDeps;
@@ -267,13 +268,18 @@ stdenv.mkDerivation (finalAttrs: {
         serial = petsc.override {
           mpiSupport = false;
         };
-        mkl = petsc.override {
-          openblas = mkl;
+        mpich = petsc.override {
+          mpi = mpich;
         };
       }
       // lib.optionalAttrs stdenv.hostPlatform.isLinux {
         fullDeps = petsc.override {
           withFullDeps = true;
+        };
+      }
+      // lib.optionalAttrs stdenv.hostPlatform.isx86_64 {
+        mkl = petsc.override {
+          openblas = mkl;
         };
       };
   };
