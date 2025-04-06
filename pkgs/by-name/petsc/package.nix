@@ -76,6 +76,7 @@ let
   petscPackages = lib.makeScope newScope (self: {
     # global override options
     inherit
+      mpi
       mpiSupport
       fortranSupport
       pythonSupport
@@ -87,7 +88,6 @@ let
 
     petscPackages = self;
     # external libraries
-    mpi = self.callPackage mpi.override { };
     openblas = self.callPackage openblas.override { };
     hdf5 = self.callPackage hdf5.override {
       fortran = gfortran;
