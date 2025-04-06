@@ -1,5 +1,7 @@
 {
   lib,
+  glibc,
+  stdenv,
   buildPythonPackage,
   fetchFromGitHub,
   python,
@@ -10,7 +12,6 @@
   setuptools,
   cython,
   pybind11,
-  mpi,
 
   # dependencies
   siphash24,
@@ -34,9 +35,6 @@
   pyadjoint-ad,
   loopy,
   libsupermesh,
-
-  # propagatedUserEnvPkgs
-  glibc,
 
   # lint
   flake8,
@@ -80,11 +78,22 @@ buildPythonPackage rec {
     hash = "sha256-28dQmX6+Al30ZeImORjI8vwCJ1LxRK9jZIYGflqKH8U=";
   };
 
-  postPatch = ''
-    substituteInPlace pyproject.toml --replace-fail \
-      "petsc4py==3.22.2" \
-      "petsc4py"
-  '';
+  postPatch =
+    ''
+      substituteInPlace pyproject.toml --replace-fail \
+        "petsc4py==3.22.2" \
+        "petsc4py"
+    ''
+    + lib.optionalString stdenv.hostPlatform.isLinux ''
+      substituteInPlace firedrake/petsc.py --replace-fail \
+        'program = ["ldd"]' \
+        'program = ["${lib.getBin glibc}/bin/ldd"]'
+    ''
+    + lib.optionalString stdenv.hostPlatform.isDarwin ''
+      substituteInPlace firedrake/petsc.py --replace-fail \
+        'program = ["otool"]' \
+        'program = ["${stdenv.cc.bintools.bintools}/bin/otool"]'
+    '';
 
   pythonRelaxDeps = true;
 
@@ -93,11 +102,6 @@ buildPythonPackage rec {
     setuptools
     cython
     pybind11
-    mpi
-  ];
-
-  buildInputs = [
-    petsc4py.petscPackages.hdf5
   ];
 
   dependencies = [
@@ -158,14 +162,8 @@ buildPythonPackage rec {
     ];
   };
 
-  propagatedUserEnvPkgs = [
-    mpi # require mpiexec
-    (lib.getDev mpi) # require mpicc
-    (lib.getBin glibc) # require ldd
-  ];
-
   postInstall = ''
-    install -D ${./logo-64x64.ico} $out/${python.sitePackages}/firedrake/icons/logo-64x64.png
+    install -D ${./logo-64x64.ico} $out/${python.sitePackages}/firedrake/icons/logo-64x64.ico
     rm -rf firedrake pyop2 tinyasm tsfc
   '';
 
@@ -173,7 +171,7 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "firedrake" ];
 
-  nativeCheckInputs = [ mpiCheckPhaseHook ] ++ propagatedUserEnvPkgs ++ optional-dependencies.test;
+  nativeCheckInputs = [ mpiCheckPhaseHook ] ++ optional-dependencies.test;
 
   installCheckPhase = ''
     runHook preCheck
@@ -193,7 +191,6 @@ buildPythonPackage rec {
               firedrake
               mpiCheckPhaseHook
             ]
-            ++ propagatedUserEnvPkgs
             ++ optional-dependencies.test;
         }
         ''

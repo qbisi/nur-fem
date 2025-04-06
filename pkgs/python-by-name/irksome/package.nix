@@ -7,6 +7,7 @@
   firedrake,
   pytest-xdist,
   pytestCheckHook,
+  mpiCheckPhaseHook,
   pylit,
 }:
 buildPythonPackage rec {
@@ -37,6 +38,7 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     pytest-xdist
     pytestCheckHook
+    mpiCheckPhaseHook
     firedrake
     pylit
   ];

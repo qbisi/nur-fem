@@ -39,9 +39,6 @@ buildPythonPackage rec {
   dependencies = [
     mpi4py
     pytest
-  ];
-
-  propagatedUserEnvPkgs = [
     mpi
   ];
 

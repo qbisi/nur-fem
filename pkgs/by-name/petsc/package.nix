@@ -166,9 +166,9 @@ stdenv.mkDerivation (finalAttrs: {
       "--with-mpi=${if mpiSupport then "1" else "0"}"
     ]
     ++ lib.optionals mpiSupport [
-      "--CC=mpicc"
-      "--with-cxx=mpicxx"
-      "--with-fc=mpif90"
+      "--with-cc=${lib.getDev mpi}/bin/mpicc"
+      "--with-cxx=${lib.getDev mpi}/bin/mpicxx"
+      "--with-fc=${lib.getDev mpi}/bin/mpif90"
     ]
     ++ lib.optionals (!debug) [
       "--with-debugging=0"
@@ -211,8 +211,7 @@ stdenv.mkDerivation (finalAttrs: {
           if (pname == "openblas" || pname == "mkl") then
             "BLASLAPACK"
           else
-            # remove pname suffix after "-"
-            lib.toUpper (toString (lib.match "([^\\-]+)-?.*" pname));
+            lib.toUpper (builtins.elemAt (lib.splitString "-" pname) 0);
       in
       ''
         substituteInPlace $out/lib/petsc/conf/petscvariables \
