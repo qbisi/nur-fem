@@ -10,6 +10,7 @@
   mpiCheckPhaseHook,
   pylit,
   vtk,
+  unstableGitUpdater,
 }:
 buildPythonPackage rec {
   version = "0-unstable-2025-04-01";
@@ -44,6 +45,8 @@ buildPythonPackage rec {
     pylit
     vtk
   ];
+
+  passthru.updateScript = unstableGitUpdater { };
 
   meta = {
     homepage = "https://www.firedrakeproject.org/Irksome";
