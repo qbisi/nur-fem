@@ -39,8 +39,13 @@
   withSuperLu ? withCommonDeps,
   withSuitesparse ? withCommonDeps,
 
-  # External libraries
+  # blaslapack provider
   openblas,
+  blaslapack ? openblas,
+
+  # External libraries
+  blas,
+  lapack,
   hdf5,
   metis,
   parmetis,
@@ -67,6 +72,9 @@ assert withP4est -> (mpiSupport && withZlib);
 # Package parmetis depend on metis and mpi support
 assert withParmetis -> (withMetis && mpiSupport);
 
+# mkl conflicts with fftw
+assert withFftw -> (blaslapack.pname != "mkl");
+
 assert withPtscotch -> (mpiSupport && withZlib);
 assert withScalapack -> mpiSupport;
 assert (withMumps && mpiSupport) -> withScalapack;
@@ -84,11 +92,11 @@ let
       isILP64
       ;
     enableMpi = self.mpiSupport;
-    blas64 = self.isILP64;
 
     petscPackages = self;
     # external libraries
-    openblas = self.callPackage openblas.override { };
+    blas = self.callPackage blas.override { blasProvider = blaslapack; };
+    lapack = self.callPackage lapack.override { lapackProvider = blaslapack; };
     hdf5 = self.callPackage hdf5.override {
       fortran = gfortran;
       cppSupport = !mpiSupport;
@@ -130,7 +138,10 @@ stdenv.mkDerivation (finalAttrs: {
     ];
 
   buildInputs =
-    [ petscPackages.openblas ]
+    [
+      petscPackages.blas
+      petscPackages.lapack
+    ]
     ++ lib.optional withZlib zlib
     ++ lib.optional withHdf5 petscPackages.hdf5
     ++ lib.optional withP4est petscPackages.p4est
@@ -209,7 +220,7 @@ stdenv.mkDerivation (finalAttrs: {
       let
         pname = package.pname or package.name;
         prefix =
-          if (pname == "openblas" || pname == "mkl") then
+          if (pname == "blas" || pname == "lapack") then
             "BLASLAPACK"
           else
             lib.toUpper (builtins.elemAt (lib.splitString "-" pname) 0);
@@ -279,7 +290,8 @@ stdenv.mkDerivation (finalAttrs: {
       }
       // lib.optionalAttrs stdenv.hostPlatform.isx86_64 {
         mkl = petsc.override {
-          openblas = mkl;
+          blaslapack = mkl;
+          withFftw = false;
         };
       };
   };
