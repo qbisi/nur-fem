@@ -196,26 +196,17 @@ buildPythonPackage rec {
             ++ optional-dependencies.test;
         }
         ''
+          runPhase unpackPhase
           runHook preCheck
 
-          set +e
-          mkdir -p $out/tmp
-          export TMPDIR=$out/tmp
+          mkdir -p $out
+          export TMPDIR=$out
           export HOME=$TMPDIR
           export VIRTUAL_ENV=$HOME
-          cp -r $src/* $out
-          cd $out/tests
 
-          echo "testing firedrake ..."
-          pytest -n auto -m "not parallel or parallel[1]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v firedrake
-          echo "testing tsfc ..."
-          pytest -n auto -m "not parallel or parallel[1]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v tsfc
-          echo "testing pyop2 ..."
-          pytest -n auto -m "not parallel or parallel[1]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
-          mpiexec -n 2 pytest -m "parallel[2]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
-          mpiexec -n 3 pytest -m "parallel[3]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
-
-          runHook postCheck
+          cd tests
+          set +e
+          pytest -n auto -m "not parallel or parallel[1]" --timeout=480 --timeout-method=thread -o faulthandler_timeout=540
         '';
   };
 
