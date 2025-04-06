@@ -214,7 +214,7 @@ buildPythonPackage rec {
           mpiexec -n 2 pytest -m "parallel[2]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
           mpiexec -n 3 pytest -m "parallel[3]" --tb=native --timeout=480 --timeout-method=thread -o faulthandler_timeout=540 -v pyop2
 
-          find $HOME -type f \( -name "*.log" -o -name "*.err" \) | while read -r file; do
+          find $HOME -type f -name "*.err" | while read -r file; do
               echo "===== Dumping: $file ====="
               cat "$file"
               echo -e "\n"
