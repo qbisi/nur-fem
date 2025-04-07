@@ -1,9 +1,11 @@
 {
   nixConfig = {
     substituters = [
+      "https://cache.nixos.org/"
       "https://cache.csrc.eu.org"
     ];
     trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "cache.csrc.eu.org:n1NPgbHzbDgdaaaUrrsX0B4JedprWWMudJ4vyN7mOkU="
     ];
     experimental-features = [
