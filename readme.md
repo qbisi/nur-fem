@@ -26,7 +26,7 @@ echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
 ## install direnv and nix-direnv
 ```
 nix profile install nixpkgs#{nix-direnv,direnv}
-echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+echo 'val "$(~/.nix-profile/bin/direnv hook bash)""' >> ~/.bashrc
 mkdir -p ~/.config/direnv
 echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" > ~/.config/direnv/direnvrc
 ```
