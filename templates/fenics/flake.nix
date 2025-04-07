@@ -1,10 +1,10 @@
 {
   nixConfig = {
     substituters = [
-      "https://cache.csrc.eu.org"
+      "https://attic.csrc.eu.org/nur-fem"
     ];
     trusted-public-keys = [
-      "cache.csrc.eu.org-1:x5rEGDqKTfp6brF2lvevAhDtBWZFrSWx7u8EH/kL/6k="
+      "nur-fem:YgFZCrwgfs9krm3KuUbDpsJ/Q7cIF6IcRH3H06b4uD0="
     ];
     experimental-features = [
       "nix-command"
