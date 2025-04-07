@@ -6,6 +6,10 @@
     trusted-public-keys = [
       "cache.csrc.eu.org:agX2YjzMlHUdRAbrzSBh8P42b9J00VYs/FndKjWmnfI="
     ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
   };
 
   inputs = {
