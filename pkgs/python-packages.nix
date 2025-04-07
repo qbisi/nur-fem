@@ -27,6 +27,22 @@
               netgen-mesher = prev.toPythonModule (self.pkgs.netgen.override { python3Packages = self; });
 
               ngsolve = prev.toPythonModule (self.pkgs.ngsolve.override { python3Packages = self; });
+
+              adios2 = prev.toPythonModule (
+                self.pkgs.adios2.override {
+                  pythonSupport = true;
+                  python3 = prev.python;
+                  python3Packages = self;
+                }
+              );
+
+              kahip = prev.toPythonModule (
+                self.pkgs.kahip.override {
+                  pythonSupport = true;
+                  python3 = prev.python;
+                  python3Packages = self;
+                }
+              );
             };
         in
         {

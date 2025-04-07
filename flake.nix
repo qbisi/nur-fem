@@ -61,23 +61,27 @@
 
             overlayAttrs = config.legacyPackages;
 
-            hydraJobs = {
-              packages = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
-                lib.packagesFromDirectoryRecursive {
-                  inherit (self'.legacyPackages) callPackage;
-                  directory = ./pkgs/by-name;
-                }
-              );
-              python312Packages = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
-                lib.packagesFromDirectoryRecursive {
-                  inherit (self'.legacyPackages.python312Packages) callPackage;
-                  directory = ./pkgs/python-by-name;
-                }
-              );
-              tests = lib.mapAttrs (_: v: lib.mapAttrs (_: package: package.tests or { }) v) (
-                builtins.removeAttrs config.hydraJobs [ "tests" ]
-              );
-            };
+            hydraJobs =
+              let
+                enable = pkgs.stdenv.hostPlatform.system != "x86_64-darwin";
+              in
+              {
+                packages = lib.optionalAttrs enable (
+                  lib.packagesFromDirectoryRecursive {
+                    inherit (self'.legacyPackages) callPackage;
+                    directory = ./pkgs/by-name;
+                  }
+                );
+                python312Packages = lib.optionalAttrs enable (
+                  lib.packagesFromDirectoryRecursive {
+                    inherit (self'.legacyPackages.python312Packages) callPackage;
+                    directory = ./pkgs/python-by-name;
+                  }
+                );
+                tests = lib.mapAttrs (_: v: lib.mapAttrs (_: package: package.tests or { }) v) (
+                  builtins.removeAttrs config.hydraJobs [ "tests" ]
+                );
+              };
           };
 
         transposition.hydraJobs.adHoc = true;
