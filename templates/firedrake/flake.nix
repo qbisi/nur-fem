@@ -1,4 +1,13 @@
 {
+  nixConfig = {
+    substituters = [
+      "https://cache.csrc.eu.org"
+    ];
+    trusted-public-keys = [
+      "cache.csrc.eu.org:agX2YjzMlHUdRAbrzSBh8P42b9J00VYs/FndKjWmnfI="
+    ];
+  };
+
   inputs = {
     nur-fem.url = "github:qbisi/nur-fem";
     nixpkgs.follows = "nur-fem/nixpkgs";
