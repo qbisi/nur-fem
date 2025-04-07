@@ -4,16 +4,35 @@ Supported fem software
 
 - [x] firedrake
 - [x] ngsolve
-- [ ] fenics
+- [x] fenics
 - [ ] mfem
 - [ ] asfem
 - [ ] freefem
 
 
-# How to init
-use nix-direnv
+# How to start
+## install nix
+Follow the instruction https://nixos.org/download/.
+Multi-user installation is recommended.
 
-run `nix flake init templatae github:qbisi/nur-fem#firedrake` to init your develop env.
+## enable nix experimental feature
+```
+echo "experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
+echo "trusted-users = $USER" | sudo tee -a /etc/nix/nix.conf
+sudo systemctl restart nix-daemon
+```
 
-# note
-under active development, will always force push.
+## install direnv and nix-direnv
+```
+nix profile install nixpkgs#{nix-direnv,direnv}
+echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+mkdir -p ~/.config/direnv
+echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" > ~/.config/direnv/direnvrc
+```
+
+## init project from template
+```
+nix flake new -t github:qbisi/nur-fem#firedrake fem-demo
+cd fem-demo
+direnv allow .
+```

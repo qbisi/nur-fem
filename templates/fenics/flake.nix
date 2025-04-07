@@ -4,7 +4,7 @@
       "https://cache.csrc.eu.org"
     ];
     trusted-public-keys = [
-      "cache.csrc.eu.org:agX2YjzMlHUdRAbrzSBh8P42b9J00VYs/FndKjWmnfI="
+      "cache.csrc.eu.org:n1NPgbHzbDgdaaaUrrsX0B4JedprWWMudJ4vyN7mOkU="
     ];
     experimental-features = [
       "nix-command"
