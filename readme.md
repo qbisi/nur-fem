@@ -11,15 +11,16 @@ Supported fem software
 
 
 # How to start
-## install nix
-Follow the instruction https://nixos.org/download/.
-Multi-user installation is recommended.
+## install nix(for none nixos user)
+single user mode is recommended
+```
+sh <(curl -L https://releases.nixos.org/nix/nix-2.26.3/install) --no-daemon
+```
 
 ## enable nix experimental feature
 ```
-echo "experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
-echo "trusted-users = $USER" | sudo tee -a /etc/nix/nix.conf
-sudo systemctl restart nix-daemon
+mkdir -p ~/.config/nix
+echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
 ```
 
 ## install direnv and nix-direnv
