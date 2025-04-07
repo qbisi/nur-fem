@@ -38,14 +38,14 @@
             ...
           }:
           {
-            # _module.args = {
-            #   pkgs = import inputs.nixpkgs {
-            #     inherit system;
-            #     config = {
-            #       allowUnfree = true;
-            #     };
-            #   };
-            # };
+            _module.args = {
+              pkgs = import inputs.nixpkgs {
+                inherit system;
+                config = {
+                  allowUnfree = true;
+                };
+              };
+            };
 
             formatter = pkgs.nixfmt-rfc-style;
 
