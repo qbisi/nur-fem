@@ -24,16 +24,16 @@
             // {
               pkgs = prev.pkgs // config.legacyPackages;
 
-              petsc4py = toPythonModule (
-                pkgs.petsc.override {
+              petsc4py = prev.toPythonModule (
+                self.pkgs.petsc.override {
                   python3 = python;
                   python3Packages = self;
                   pythonSupport = true;
                 }
               );
 
-              slepc4py = toPythonModule (
-                pkgs.slepc.override {
+              slepc4py = prev.toPythonModule (
+                self.pkgs.slepc.override {
                   pythonSupport = true;
                   python3 = self.python;
                   python3Packages = self;
