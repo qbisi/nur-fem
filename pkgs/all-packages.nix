@@ -19,7 +19,27 @@
     {
       legacyPackages = lib.makeScope pkgs.newScope (
         self:
-        let
+        lib.packagesFromDirectoryRecursive {
+          inherit (self) callPackage;
+          directory = ./by-name;
+        }
+        // {
+          python312 = pkgs.python312.override (old: {
+            packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) self.pythonOverrides;
+          });
+
+          python313 = pkgs.python312.override (old: {
+            packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) self.pythonOverrides;
+          });
+
+          python3 = self.python312;
+
+          python312Packages = lib.recurseIntoAttrs self.python312.pkgs;
+
+          python313Packages = lib.recurseIntoAttrs self.python313.pkgs;
+
+          python3Packages = self.python312Packages;
+
           pythonOverrides =
             final: prev:
             lib.packagesFromDirectoryRecursive {
@@ -74,27 +94,6 @@
                 }
               );
             };
-        in
-        lib.packagesFromDirectoryRecursive {
-          inherit (self) callPackage;
-          directory = ./by-name;
-        }
-        // {
-          python312 = pkgs.python312.override (old: {
-            packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) pythonOverrides;
-          });
-
-          python313 = pkgs.python312.override (old: {
-            packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) pythonOverrides;
-          });
-
-          python3 = self.python312;
-
-          python312Packages = lib.recurseIntoAttrs self.python312.pkgs;
-
-          python313Packages = lib.recurseIntoAttrs self.python313.pkgs;
-
-          python3Packages = self.python312Packages;
         }
       );
     };
