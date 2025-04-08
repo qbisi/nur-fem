@@ -71,12 +71,14 @@
             };
         in
         {
+          inherit pythonOverrides;
+
           python312 = pkgs.python312.override (old: {
-            packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) pythonOverrides;
+            packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) config.legacyPackages.pythonOverrides;
           });
 
           python313 = pkgs.python312.override (old: {
-            packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) pythonOverrides;
+            packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) config.legacyPackages.pythonOverrides;
           });
 
           python312Packages = lib.recurseIntoAttrs config.legacyPackages.python312.pkgs;
