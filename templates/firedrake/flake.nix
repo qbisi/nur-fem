@@ -62,7 +62,7 @@
             in
             pkgs.mkShell {
               packages = [
-                pkgs.hello
+                python-env
               ];
 
               env.OMP_NUM_THREADS = 1;
