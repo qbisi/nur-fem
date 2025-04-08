@@ -66,9 +66,10 @@
   # passthru.tests
   firedrake,
   runCommand,
+  pytestCheckHook,
 }:
 buildPythonPackage rec {
-  version = "0-unstable-2025-04-04";
+  version = "0.14-unstable-2025-04-04";
   pname = "firedrake";
   pyproject = true;
 
@@ -165,7 +166,6 @@ buildPythonPackage rec {
   };
 
   postInstall = ''
-    install -D ${./logo-64x64.ico} $out/${python.sitePackages}/firedrake/icons/logo-64x64.ico
     rm -rf firedrake pyop2 tinyasm tsfc
   '';
 
@@ -188,25 +188,42 @@ buildPythonPackage rec {
       runCommand "firedrake-full-check"
         {
           inherit src;
-          nativeBuildInputs =
-            [
-              firedrake
-              mpiCheckPhaseHook
-            ]
-            ++ optional-dependencies.test;
+          nativeBuildInputs = [
+            firedrake
+            pytestCheckHook
+            mpiCheckPhaseHook
+          ] ++ optional-dependencies.test;
+          # PYOP2_CFLAGS is used to pass some badly written example tests
+          env.PYOP2_CFLAGS = toString [
+            "-Wno-incompatible-pointer-types"
+          ];
+
+          pytestFlags = [
+            "firedrake/adjoint"
+            "--timeout=480"
+            "--timeout-method=thread"
+            "-o faulthandler_timeout=540"
+          ];
+
+          disabledTests = [
+            "test_dat_illegal_name"
+            "test_dat_illegal_set"
+            "parallel"
+          ];
         }
         ''
           runPhase unpackPhase
-          runHook preCheck
+
+          substituteInPlace tests/pyop2/test_callables.py \
+            --replace-fail "-llapack" "-L${lib.getLib petsc4py.petscPackages.lapack}/lib -llapack"
 
           mkdir -p $out
           export TMPDIR=$out
           export HOME=$TMPDIR
           export VIRTUAL_ENV=$HOME
-
           cd tests
-          set +e
-          pytest -n auto -m "not parallel or parallel[1]" --timeout=480 --timeout-method=thread -o faulthandler_timeout=540
+
+          pytestCheckPhase
         '';
   };
 

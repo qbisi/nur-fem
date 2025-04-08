@@ -21,7 +21,7 @@ let
   };
 in
 buildPythonPackage rec {
-  version = "0-unstable-2025-04-02";
+  version = "2025.04.0-unstable-2025-04-02";
   pname = "firdrake-fiat";
   pyproject = true;
 

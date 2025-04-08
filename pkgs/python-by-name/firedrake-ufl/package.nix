@@ -9,7 +9,7 @@
 }:
 
 buildPythonPackage rec {
-  version = "0-unstable-2025-03-25";
+  version = "2024.3.0-unstable-2025-03-25";
   pname = "firedrake-ufl";
   pyproject = true;
 
