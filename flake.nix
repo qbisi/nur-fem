@@ -101,6 +101,10 @@
               path = ./templates/firedrake;
               description = "firdrake template";
             };
+            fenics = {
+              path = ./templates/fenics;
+              description = "fenics template";
+            };
           };
 
           nixosModules.default = {
