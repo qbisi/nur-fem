@@ -37,3 +37,9 @@ nix flake new -t github:qbisi/nur-fem#firedrake fem-demo
 cd fem-demo
 direnv allow .
 ```
+
+## How to uninstall
+```
+rm -rf ~/.nix-*
+rm /nix -rf
+```
