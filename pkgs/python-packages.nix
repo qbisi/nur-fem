@@ -24,9 +24,34 @@
             // {
               pkgs = prev.pkgs // config.legacyPackages;
 
-              netgen-mesher = prev.toPythonModule (self.pkgs.netgen.override { python3Packages = self; });
+              petsc4py = toPythonModule (
+                pkgs.petsc.override {
+                  python3 = python;
+                  python3Packages = self;
+                  pythonSupport = true;
+                }
+              );
 
-              ngsolve = prev.toPythonModule (self.pkgs.ngsolve.override { python3Packages = self; });
+              slepc4py = toPythonModule (
+                pkgs.slepc.override {
+                  pythonSupport = true;
+                  python3 = self.python;
+                  python3Packages = self;
+                  petsc = petsc4py;
+                }
+              );
+
+              netgen-mesher = prev.toPythonModule (
+                self.pkgs.netgen.override {
+                  python3Packages = self;
+                }
+              );
+
+              ngsolve = prev.toPythonModule (
+                self.pkgs.ngsolve.override {
+                  python3Packages = self;
+                }
+              );
 
               adios2 = prev.toPythonModule (
                 self.pkgs.adios2.override {
