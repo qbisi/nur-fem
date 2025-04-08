@@ -34,7 +34,6 @@
         ];
 
         imports = [
-          # inputs.flake-parts.flakeModules.easyOverlay
           ./pkgs/all-packages.nix
         ];
 
@@ -67,8 +66,6 @@
                 inherit (self'.legacyPackages.python312Packages) callPackage;
                 directory = ./pkgs/python-by-name;
               });
-
-            # overlayAttrs = config.legacyPackages;
 
             hydraJobs =
               let

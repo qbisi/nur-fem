@@ -1,6 +1,6 @@
 { lib, self, ... }:
 {
-  flake.overlay.default =
+  flake.overlays.default =
     self: pkgs:
     lib.packagesFromDirectoryRecursive {
       inherit (self) callPackage;
@@ -88,6 +88,6 @@
       ...
     }:
     {
-      legacyPackages = lib.makeScope pkgs.newScope (final: self.overlay.default final pkgs);
+      legacyPackages = lib.makeScope pkgs.newScope (final: self.overlays.default final pkgs);
     };
 }
