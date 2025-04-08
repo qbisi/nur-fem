@@ -29,6 +29,7 @@
   mpiCheckPhaseHook,
   writableTmpDirAsHomeHook,
   withParmetis ? true,
+  fenics-dolfinx,
 }:
 let
   dolfinx = stdenv.mkDerivation (finalAttrs: {
@@ -154,6 +155,16 @@ buildPythonPackage rec {
 
   passthru = {
     inherit dolfinx;
+    tests = {
+      complex =
+        let
+          petsc = petsc4py.override { scalarType = "complex"; };
+        in
+        fenics-dolfinx.override {
+          petsc4py = petsc;
+          slepc4py = slepc4py.override { inherit petsc; };
+        };
+    };
   };
 
   nativeCheckInputs = [
