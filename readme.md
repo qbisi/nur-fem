@@ -14,7 +14,7 @@ Supported fem software
 ## install nix(for none nixos user)
 single user mode is recommended
 ```
-sh <(curl -L https://releases.nixos.org/nix/nix-2.26.3/install) --no-daemon
+sh <(curl -L https://nixos.org/nix/install) --no-daemon
 ```
 
 ## enable nix experimental feature
