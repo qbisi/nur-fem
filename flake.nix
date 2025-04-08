@@ -69,7 +69,8 @@
 
             hydraJobs =
               let
-                enable = pkgs.stdenv.hostPlatform.system != "x86_64-darwin";
+                enable = pkgs.stdenv.hostPlatform.isLinux;
+                # enable = pkgs.stdenv.hostPlatform.system != "x86_64-darwin";
               in
               {
                 packages = lib.optionalAttrs enable (
