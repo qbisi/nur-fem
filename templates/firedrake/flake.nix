@@ -15,6 +15,10 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
+    nixgl = {
+      url = "github:nix-community/nixGL";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -32,6 +36,7 @@
           lib,
           system,
           self',
+          inputs',
           ...
         }:
         {
@@ -63,6 +68,8 @@
             pkgs.mkShell {
               packages = [
                 python-env
+                inputs'.nixgl.packages.nixGLIntel # run nixGLIntel "your program" on non-nixos Platform
+                # inputs'.nixgl.packages.nixGLNvidia
               ];
 
               env.OMP_NUM_THREADS = 1;

@@ -38,6 +38,12 @@ cd fem-demo
 direnv allow .
 ```
 
+## for graphic program
+```
+nixGLIntel python demo.py
+nixGLNvidia python demo.py
+```
+
 # How to uninstall
 ```
 rm -rf ~/.nix-*
