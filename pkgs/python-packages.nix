@@ -37,7 +37,7 @@
                   pythonSupport = true;
                   python3 = prev.python;
                   python3Packages = self;
-                  petsc = petsc4py;
+                  petsc = self.petsc4py;
                 }
               );
 
