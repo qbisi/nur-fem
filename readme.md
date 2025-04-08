@@ -26,7 +26,7 @@ echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
 ## install direnv and nix-direnv
 ```
 nix profile install nixpkgs#{nix-direnv,direnv}
-echo 'val "$(~/.nix-profile/bin/direnv hook bash)""' >> ~/.bashrc
+echo 'eval "$(~/.nix-profile/bin/direnv hook bash)""' >> ~/.bashrc
 mkdir -p ~/.config/direnv
 echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" > ~/.config/direnv/direnvrc
 ```
@@ -38,7 +38,7 @@ cd fem-demo
 direnv allow .
 ```
 
-## How to uninstall
+# How to uninstall
 ```
 rm -rf ~/.nix-*
 rm /nix -rf
