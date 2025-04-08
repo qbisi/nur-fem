@@ -26,7 +26,7 @@
 
               petsc4py = prev.toPythonModule (
                 self.pkgs.petsc.override {
-                  python3 = python;
+                  python3 = prev.python;
                   python3Packages = self;
                   pythonSupport = true;
                 }
@@ -35,7 +35,7 @@
               slepc4py = prev.toPythonModule (
                 self.pkgs.slepc.override {
                   pythonSupport = true;
-                  python3 = self.python;
+                  python3 = prev.python;
                   python3Packages = self;
                   petsc = petsc4py;
                 }
