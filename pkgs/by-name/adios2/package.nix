@@ -12,19 +12,20 @@
   python3Packages,
   mpi,
   bzip2,
+  lz4,
   c-blosc2,
   hdf5-mpi,
+  libfabric,
   libpng,
   libsodium,
   pugixml,
   sqlite,
-  yaml-cpp,
   zeromq,
   zfp,
   zlib,
   ucx,
+  yaml-cpp,
   llvmPackages,
-  gtest,
   pythonSupport ? true,
   withExamples ? false,
 }:
@@ -61,16 +62,18 @@ stdenv.mkDerivation (finalAttrs: {
     [
       mpi
       bzip2
+      lz4
       c-blosc2
       hdf5-mpi
+      libfabric
       libpng
       libsodium
       pugixml
       sqlite
-      yaml-cpp
       zeromq
       zfp
       zlib
+      yaml-cpp
 
       # Todo: add these optional dependcies in nixpkgs.
       # sz
@@ -80,6 +83,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       ucx
     ]
+    # openmp required by zfp
     ++ lib.optionals stdenv.cc.isClang [
       llvmPackages.openmp
     ];
@@ -90,24 +94,47 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   cmakeFlags = [
+    (lib.cmakeBool "ADIOS2_USE_HDF5_VOL" true)
     (lib.cmakeBool "ADIOS2_BUILD_EXAMPLES" withExamples)
     (lib.cmakeBool "BUILD_TESTING" finalAttrs.finalPackage.doCheck)
-    (lib.cmakeFeature "CMAKE_INSTALL_PYTHONDIR" python3.sitePackages)
-    # required for finding the generated adios2-config.cmake file
-    (lib.cmakeFeature "CMAKE_PREFIX_PATH" "${placeholder "out"}")
+    (lib.cmakeBool "ADIOS2_USE_EXTERNAL_DEPENDENCIES" true)
+    (lib.cmakeBool "ADIOS2_USE_EXTERNAL_GTEST" false)
+    (lib.cmakeFeature "CMAKE_INSTALL_PREFIX" "/")
+    (lib.cmakeFeature "CMAKE_INSTALL_PYTHONDIR" "${placeholder "out"}/${python3.sitePackages}")
+    (lib.cmakeFeature "CMAKE_INSTALL_DATAROOTDIR" "${placeholder "out"}/share")
+    (lib.cmakeFeature "CMAKE_CTEST_ARGUMENTS" "-E;'${lib.concatStringsSep "|" finalAttrs.excludedTests}'")
   ];
 
-  nativeCheckInputs = [
-    gtest
+  # required for finding the generated adios2-config.cmake file
+  env.adios2_DIR = "${placeholder "out"}/lib/cmake/adios2";
+
+  doCheck = true;
+
+  excludedTests = [
+    # require installed adios2-config
+    "Install.*"
+    # fail on sandbox
+    "Unit.FileTransport.FailOnEOF.Serial"
+    # osc_ucx_component.c:369  Error: OSC UCX component priority set inside component query failed
+    "Bindings.Fortran.BPWriteReadHeatMap6D.MPI"
+    # testing/adios2/engine/bp/TestBPJoinedArray.cpp:182: Failure
+    # Expected: (data[i * Ncols + j]) < ((nsteps + 1) * 1.0 + 0.9999), actual: 5.3073 vs 4.9999
+    "Engine.BP.BPJoinedArray.MultiBlock.BP4.MPI"
+    "Engine.BP.BPJoinedArray.MultiBlock.BP5.MPI"
+    "Engine.BP.*/BPReadMultithreadedTestP.ReadFile/*.BP5.Serial"
+    "Engine.BP.*/BPReadMultithreadedTestP.ReadStream/*.BP5.Serial"
   ];
 
-  doCheck = false;
+  postFixUp = ''
+    patchShebangs $out/bin
+  '';
 
   meta = {
     homepage = "https://adios2.readthedocs.io/en/latest/";
     description = "The Adaptable Input/Output System version 2";
     license = lib.licenses.asl20;
     platforms = lib.platforms.unix;
+    broken = stdenv.hostPlatform.isDarwin && pythonSupport;
     maintainers = with lib.maintainers; [ qbisi ];
   };
 })
