@@ -199,7 +199,6 @@ buildPythonPackage rec {
           ];
 
           pytestFlags = [
-            "firedrake/adjoint"
             "--timeout=480"
             "--timeout-method=thread"
             "-o faulthandler_timeout=540"
