@@ -23,10 +23,12 @@
   zeromq,
   zfp,
   zlib,
+  zlib-ng,
+  zstd,
   ucx,
   yaml-cpp,
   llvmPackages,
-  pythonSupport ? true,
+  pythonSupport ? false,
   withExamples ? false,
 }:
 stdenv.mkDerivation (finalAttrs: {
@@ -40,9 +42,14 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-NVyw7xoPutXeUS87jjVv1YxJnwNGZAT4QfkBLzvQbwg=";
   };
 
-  postPatch = ''
-    patchShebangs cmake/install/post/generate-adios2-config.sh.in testing
-  '';
+  postPatch =
+    ''
+      patchShebangs cmake/install/post/generate-adios2-config.sh.in
+    ''
+    + lib.optionalString stdenv.hostPlatform.isDarwin ''
+      substituteInPlace bindings/Python/py11{Attribute,Engine,Variable}.cpp \
+        --replace-fail "dynamic_cast" "reinterpret_cast"
+    '';
 
   nativeBuildInputs =
     [
@@ -73,6 +80,8 @@ stdenv.mkDerivation (finalAttrs: {
       zeromq
       zfp
       zlib
+      zlib-ng # required by c-blocs2
+      zstd # required by zlib-ng
       yaml-cpp
 
       # Todo: add these optional dependcies in nixpkgs.
@@ -94,51 +103,47 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   cmakeFlags = [
+    (lib.cmakeBool "ADIOS2_USE_HDF5" true)
     (lib.cmakeBool "ADIOS2_USE_HDF5_VOL" true)
+    (lib.cmakeBool "BUILD_TESTING" false)
     (lib.cmakeBool "ADIOS2_BUILD_EXAMPLES" withExamples)
-    (lib.cmakeBool "ADIOS2_RUN_INSTALL_TEST" false)
-    (lib.cmakeBool "BUILD_TESTING" finalAttrs.finalPackage.doCheck)
     (lib.cmakeBool "ADIOS2_USE_EXTERNAL_DEPENDENCIES" true)
-    (lib.cmakeBool "ADIOS2_USE_EXTERNAL_GTEST" false)
-    (lib.cmakeFeature "CMAKE_INSTALL_PREFIX" "/")
-    (lib.cmakeFeature "CMAKE_INSTALL_PYTHONDIR" "${placeholder "out"}/${python3.sitePackages}")
-    (lib.cmakeFeature "CMAKE_INSTALL_DATAROOTDIR" "${placeholder "out"}/share")
-    (lib.cmakeFeature "CMAKE_CTEST_ARGUMENTS" "-E;'${lib.concatStringsSep "|" finalAttrs.excludedTests}'")
+    (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
+    (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
+    (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
+    (lib.cmakeFeature "CMAKE_INSTALL_PYTHONDIR" python3.sitePackages)
   ];
 
   # required for finding the generated adios2-config.cmake file
   env.adios2_DIR = "${placeholder "out"}/lib/cmake/adios2";
 
-  doCheck = true;
+  # ctest takes too much time, so we only perform some smoke Python tests
+  doInstallCheck = pythonSupport;
 
-  excludedTests = [
-    # fail on sandbox
-    "Unit.FileTransport.FailOnEOF.Serial"
-    # osc_ucx_component.c:369  Error: OSC UCX component priority set inside component query failed
-    "Bindings.Fortran.BPWriteReadHeatMap6D.MPI"
-    # testing/adios2/engine/bp/TestBPJoinedArray.cpp:182: Failure
-    # Expected: (data[i * Ncols + j]) < ((nsteps + 1) * 1.0 + 0.9999), actual: 5.3073 vs 4.9999
-    "Engine.BP.BPJoinedArray.MultiBlock.BP4.MPI"
-    "Engine.BP.BPJoinedArray.MultiBlock.BP5.MPI"
-    "Engine.BP.*/BPReadMultithreadedTestP.ReadFile/*.BP5.Serial"
-    "Engine.BP.*/BPReadMultithreadedTestP.ReadStream/*.BP5.Serial"
+  preCheck = ''
+    export PYTHONPATH=$out/${python3.sitePackages}:$PYTHONPATH
+  '';
+
+  pytestFlagsArray = [
+    "../testing/adios2/python/Test*.py"
   ];
 
-  postFixUp =
-    ''
-      patchShebangs $out/bin
-    ''
-    + lib.optionalString (stdenv.hostPlatform.isDarwin && pythonSupport) ''
-      find $out/${python3.sitePackages} -name "*-darwin.so" -exec \
-        install_name_tool -rpath ''${PWD#/private}$out/lib $out/lib  {} \;
-    '';
+  pythonImportsCheck = [ "adios2" ];
+
+  nativeInstallCheckInputs = lib.optionals pythonSupport [
+    python3Packages.pythonImportsCheckHook
+    python3Packages.pytestCheckHook
+  ];
+
+  postFixUp = ''
+    patchShebangs $out/bin
+  '';
 
   meta = {
     homepage = "https://adios2.readthedocs.io/en/latest/";
     description = "The Adaptable Input/Output System version 2";
     license = lib.licenses.asl20;
     platforms = lib.platforms.unix;
-    broken = stdenv.hostPlatform.isDarwin && pythonSupport;
     maintainers = with lib.maintainers; [ qbisi ];
   };
 })

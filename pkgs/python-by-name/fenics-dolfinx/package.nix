@@ -26,7 +26,6 @@
   matplotlib,
   pytest-xdist,
   pytestCheckHook,
-  mpiCheckPhaseHook,
   writableTmpDirAsHomeHook,
   withParmetis ? true,
   fenics-dolfinx,
@@ -76,8 +75,6 @@ let
       (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
     ];
-
-    doCheck = true;
 
     meta = {
       homepage = "https://github.com/fenics/dolfinx";
@@ -140,6 +137,14 @@ buildPythonPackage rec {
 
   doCheck = true;
 
+  nativeCheckInputs = [
+    scipy
+    matplotlib
+    pytest-xdist
+    pytestCheckHook
+    writableTmpDirAsHomeHook
+  ];
+
   preCheck = ''
     rm -rf dolfinx
   '';
@@ -154,7 +159,6 @@ buildPythonPackage rec {
   ];
 
   passthru = {
-    inherit dolfinx;
     tests = {
       complex =
         let
@@ -166,12 +170,4 @@ buildPythonPackage rec {
         };
     };
   };
-
-  nativeCheckInputs = [
-    scipy
-    matplotlib
-    pytest-xdist
-    pytestCheckHook
-    writableTmpDirAsHomeHook
-  ];
 }
