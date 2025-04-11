@@ -135,7 +135,7 @@ stdenv.mkDerivation (finalAttrs: {
     python3Packages.pytestCheckHook
   ];
 
-  postFixUp = ''
+  postFixup = ''
     patchShebangs $out/bin
   '';
 

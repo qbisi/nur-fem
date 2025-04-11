@@ -38,10 +38,11 @@
   withFftw ? withCommonDeps,
   withSuperLu ? withCommonDeps,
   withSuitesparse ? withCommonDeps,
+  withSuperLuDist ? withCommonDeps,
 
-  # blaslapack provider
+  # blas and Lapack provider
   openblas,
-  blaslapack ? openblas,
+  blasProvider ? openblas,
 
   # External libraries
   blas,
@@ -58,6 +59,7 @@
   fftw,
   superlu,
   suitesparse,
+  superlu_dist,
 
   # Used in passthru.tests
   petsc,
@@ -73,12 +75,13 @@ assert withP4est -> (mpiSupport && withZlib);
 assert withParmetis -> (withMetis && mpiSupport);
 
 # mkl conflicts with fftw
-assert withFftw -> (blaslapack.pname != "mkl");
+assert withFftw -> (blasProvider.pname != "mkl");
 
 assert withPtscotch -> (mpiSupport && withZlib);
 assert withScalapack -> mpiSupport;
 assert (withMumps && mpiSupport) -> withScalapack;
 assert withHypre -> mpiSupport;
+assert withSuperLuDist -> mpiSupport;
 
 let
   petscPackages = lib.makeScope newScope (self: {
@@ -95,8 +98,8 @@ let
 
     petscPackages = self;
     # external libraries
-    blas = self.callPackage blas.override { blasProvider = blaslapack; };
-    lapack = self.callPackage lapack.override { lapackProvider = blaslapack; };
+    blas = self.callPackage blas.override { inherit blasProvider; };
+    lapack = self.callPackage lapack.override { lapackProvider = blasProvider; };
     hdf5 = self.callPackage hdf5.override {
       fortran = gfortran;
       cppSupport = !mpiSupport;
@@ -110,6 +113,7 @@ let
     hypre = self.callPackage hypre.override { };
     fftw = self.callPackage fftw.override { };
     superlu = self.callPackage superlu.override { };
+    superlu_dist = self.callPackage superlu_dist.override { };
     suitesparse = self.callPackage suitesparse.override { };
   });
 in
@@ -152,6 +156,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optional withMumps petscPackages.mumps
     ++ lib.optional withHypre petscPackages.hypre
     ++ lib.optional withSuperLu petscPackages.superlu
+    ++ lib.optional withSuperLuDist petscPackages.superlu_dist
     ++ lib.optional withFftw petscPackages.fftw
     ++ lib.optional withSuitesparse petscPackages.suitesparse;
 
@@ -172,7 +177,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   configureFlags =
     [
-      "--with-blaslapack=1"
+      "--with-blasProvider=1"
       "--with-scalar-type=${scalarType}"
       "--with-precision=${precision}"
       "--with-mpi=${if mpiSupport then "1" else "0"}"
@@ -214,25 +219,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   enableParallelBuilding = true;
 
-  postInstall = lib.concatStringsSep "\n" (
-    map (
-      package:
-      let
-        pname = package.pname or package.name;
-        prefix =
-          if (pname == "blas" || pname == "lapack") then
-            "BLASLAPACK"
-          else
-            lib.toUpper (builtins.elemAt (lib.splitString "-" pname) 0);
-      in
-      ''
-        substituteInPlace $out/lib/petsc/conf/petscvariables \
-          --replace-fail "${prefix}_INCLUDE =" "${prefix}_INCLUDE = -I${lib.getDev package}/include" \
-          --replace-fail "${prefix}_LIB =" "${prefix}_LIB = -L${lib.getLib package}/lib"
-      ''
-    ) finalAttrs.buildInputs
-  );
-
   # This is needed as the checks need to compile and link the test cases with
   # -lpetsc, which is not available in the checkPhase, which is executed before
   # the installPhase. The installCheckPhase comes after the installPhase, so
@@ -262,6 +248,25 @@ stdenv.mkDerivation (finalAttrs: {
 
   pythonImportsCheck = [ "petsc4py" ];
 
+  postFixup = lib.concatStringsSep "\n" (
+    map (
+      package:
+      let
+        pname = package.pname or package.name;
+        prefix =
+          if (pname == "blas" || pname == "lapack") then
+            "BLASLAPACK"
+          else
+            lib.toUpper (builtins.elemAt (lib.splitString "-" pname) 0);
+      in
+      ''
+        substituteInPlace $out/lib/petsc/conf/petscvariables \
+          --replace-fail "${prefix}_INCLUDE =" "${prefix}_INCLUDE = -I${lib.getDev package}/include" \
+          --replace-fail "${prefix}_LIB =" "${prefix}_LIB = -L${lib.getLib package}/lib"
+      ''
+    ) finalAttrs.buildInputs
+  );
+
   passthru = {
     inherit
       isILP64
@@ -290,7 +295,7 @@ stdenv.mkDerivation (finalAttrs: {
       }
       // lib.optionalAttrs stdenv.hostPlatform.isx86_64 {
         mkl = petsc.override {
-          blaslapack = mkl;
+          blasProvider = mkl;
           withFftw = false;
         };
       };
