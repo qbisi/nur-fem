@@ -41,7 +41,7 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   postPatch = ''
-    patchShebangs cmake scripts testing
+    patchShebangs cmake/install/post/generate-adios2-config.sh.in testing
   '';
 
   nativeBuildInputs =
@@ -96,6 +96,7 @@ stdenv.mkDerivation (finalAttrs: {
   cmakeFlags = [
     (lib.cmakeBool "ADIOS2_USE_HDF5_VOL" true)
     (lib.cmakeBool "ADIOS2_BUILD_EXAMPLES" withExamples)
+    (lib.cmakeBool "ADIOS2_RUN_INSTALL_TEST" false)
     (lib.cmakeBool "BUILD_TESTING" finalAttrs.finalPackage.doCheck)
     (lib.cmakeBool "ADIOS2_USE_EXTERNAL_DEPENDENCIES" true)
     (lib.cmakeBool "ADIOS2_USE_EXTERNAL_GTEST" false)
@@ -111,8 +112,6 @@ stdenv.mkDerivation (finalAttrs: {
   doCheck = true;
 
   excludedTests = [
-    # require installed adios2-config
-    "Install.*"
     # fail on sandbox
     "Unit.FileTransport.FailOnEOF.Serial"
     # osc_ucx_component.c:369  Error: OSC UCX component priority set inside component query failed
@@ -125,9 +124,14 @@ stdenv.mkDerivation (finalAttrs: {
     "Engine.BP.*/BPReadMultithreadedTestP.ReadStream/*.BP5.Serial"
   ];
 
-  postFixUp = ''
-    patchShebangs $out/bin
-  '';
+  postFixUp =
+    ''
+      patchShebangs $out/bin
+    ''
+    + lib.optionalString (stdenv.hostPlatform.isDarwin && pythonSupport) ''
+      find $out/${python3.sitePackages} -name "*-darwin.so" -exec \
+        install_name_tool -rpath ''${PWD#/private}$out/lib $out/lib  {} \;
+    '';
 
   meta = {
     homepage = "https://adios2.readthedocs.io/en/latest/";
