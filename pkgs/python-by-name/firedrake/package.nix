@@ -199,6 +199,7 @@ buildPythonPackage rec {
           ];
 
           pytestFlags = [
+            "-n $NIX_BUILD_CORES"
             "--timeout=480"
             "--timeout-method=thread"
             "-o faulthandler_timeout=540"
