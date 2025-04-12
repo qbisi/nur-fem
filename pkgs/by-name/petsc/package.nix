@@ -14,6 +14,8 @@
   python3Packages,
 
   # Build options
+  openblas,
+  blasProvider ? openblas,
   debug ? false,
   scalarType ? "real",
   precision ? "double",
@@ -35,14 +37,10 @@
   withMumps ? withCommonDeps,
   withP4est ? withFullDeps,
   withHypre ? withCommonDeps && mpiSupport,
-  withFftw ? withCommonDeps,
+  withFftw ? withFullDeps,
   withSuperLu ? withCommonDeps,
   withSuitesparse ? withCommonDeps,
-  withSuperLuDist ? withCommonDeps,
-
-  # blas and Lapack provider
-  openblas,
-  blasProvider ? openblas,
+  withSuperLuDist ? withFullDeps,
 
   # External libraries
   blas,
@@ -81,7 +79,7 @@ assert withPtscotch -> (mpiSupport && withZlib);
 assert withScalapack -> mpiSupport;
 assert (withMumps && mpiSupport) -> withScalapack;
 assert withHypre -> mpiSupport;
-assert withSuperLuDist -> mpiSupport;
+assert withSuperLuDist -> (mpiSupport && stdenv.hostPlatform.isLinux);
 
 let
   petscPackages = lib.makeScope newScope (self: {
@@ -291,12 +289,12 @@ stdenv.mkDerivation (finalAttrs: {
       // lib.optionalAttrs stdenv.hostPlatform.isLinux {
         fullDeps = petsc.override {
           withFullDeps = true;
+          pythonSupport = true;
         };
       }
       // lib.optionalAttrs stdenv.hostPlatform.isx86_64 {
         mkl = petsc.override {
           blasProvider = mkl;
-          withFftw = false;
         };
       };
   };

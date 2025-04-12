@@ -27,7 +27,7 @@
   pytest-xdist,
   pytestCheckHook,
   writableTmpDirAsHomeHook,
-  withParmetis ? true,
+  withParmetis ? false,
   fenics-dolfinx,
 }:
 let
@@ -167,6 +167,15 @@ buildPythonPackage rec {
         fenics-dolfinx.override {
           petsc4py = petsc;
           slepc4py = slepc4py.override { inherit petsc; };
+        };
+      fullDeps =
+        let
+          petsc = petsc4py.override { withFullDeps = true; };
+        in
+        fenics-dolfinx.override {
+          petsc4py = petsc;
+          slepc4py = slepc4py.override { inherit petsc; };
+          withParmetis = true;
         };
     };
   };
