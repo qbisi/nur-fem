@@ -13,6 +13,7 @@
   libpng,
   freetype,
   fontconfig,
+  llvmPackages,
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "glvis";
@@ -32,15 +33,19 @@ stdenv.mkDerivation (finalAttrs: {
     xorg.libXi
   ];
 
-  buildInputs = [
-    mfem
-    libGL
-    SDL2
-    glew
-    libpng
-    freetype
-    fontconfig
-  ];
+  buildInputs =
+    [
+      mfem
+      libGL
+      SDL2
+      glew
+      libpng
+      freetype
+      fontconfig
+    ]
+    ++ lib.optionals stdenv.cc.isClang [
+      llvmPackages.openmp
+    ];
 
   cmakeFlags = [
   ];
@@ -50,6 +55,7 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "http://glvis.org";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ qbisi ];
+    broken = stdenv.hostPlatform.isDarwin;
     platforms = lib.platforms.unix;
   };
 })
