@@ -261,8 +261,8 @@ stdenv.mkDerivation (finalAttrs: {
       in
       ''
         substituteInPlace $out/lib/petsc/conf/petscvariables \
-          --replace-fail "${prefix}_INCLUDE =" "${prefix}_INCLUDE = -I${lib.getDev package}/include" \
-          --replace-fail "${prefix}_LIB =" "${prefix}_LIB = -L${lib.getLib package}/lib"
+          --replace-quiet "${prefix}_INCLUDE =" "${prefix}_INCLUDE = -I${lib.getDev package}/include" \
+          --replace-quiet "${prefix}_LIB =" "${prefix}_LIB = -L${lib.getLib package}/lib"
       ''
     ) finalAttrs.buildInputs
   );
