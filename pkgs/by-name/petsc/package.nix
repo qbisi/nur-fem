@@ -175,7 +175,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   configureFlags =
     [
-      "--with-blasProvider=1"
+      "--with-blaslapack=1"
       "--with-scalar-type=${scalarType}"
       "--with-precision=${precision}"
       "--with-mpi=${if mpiSupport then "1" else "0"}"
