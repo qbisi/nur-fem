@@ -205,6 +205,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optional withHdf5 "--with-hdf5=1"
     ++ lib.optional withHypre "--with-hypre=1"
     ++ lib.optional withSuperLu "--with-superlu=1"
+    ++ lib.optional withSuperLuDist "--with-superlu_dist=1"
     ++ lib.optional withFftw "--with-fftw=1"
     ++ lib.optional withSuitesparse "--with-suitesparse=1";
 
