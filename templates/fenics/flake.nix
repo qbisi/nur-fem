@@ -15,10 +15,6 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
-    nixgl = {
-      url = "github:nix-community/nixGL";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -45,6 +41,15 @@
               inherit system;
               overlays = [
                 inputs.nur-fem.overlays.default
+                (final: prev: {
+                  petsc = prev.petsc.override {
+                    # mpi = prev.mpich;
+                    # blasProvider = prev.mkl;
+                    # scalarType = "complex";
+                    # withFullDeps = true;
+                    # debug = false;
+                  };
+                })
               ];
               config = {
                 allowUnfree = true;
@@ -71,8 +76,7 @@
             pkgs.mkShell {
               packages = [
                 python-env
-                inputs'.nixgl.packages.nixGLIntel  # run nixGLIntel "your program" on non-nixos Platform
-                # inputs'.nixgl.packages.nixGLNvidia
+                pkgs.nixGLHook
               ];
 
               env.OMP_NUM_THREADS = 1;
