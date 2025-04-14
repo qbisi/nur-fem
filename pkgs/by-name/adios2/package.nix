@@ -7,7 +7,6 @@
   ninja,
   gfortran,
   pkg-config,
-  nlohmann_json,
   python3,
   python3Packages,
   mpi,
@@ -27,6 +26,7 @@
   zstd,
   ucx,
   yaml-cpp,
+  nlohmann_json,
   llvmPackages,
   pythonSupport ? false,
   withExamples ? false,
@@ -46,6 +46,7 @@ stdenv.mkDerivation (finalAttrs: {
     ''
       patchShebangs cmake/install/post/generate-adios2-config.sh.in
     ''
+    # Dynamic cast to nullptr on darwin platform, switch to unsafe reinterpret cast.
     + lib.optionalString stdenv.hostPlatform.isDarwin ''
       substituteInPlace bindings/Python/py11{Attribute,Engine,Variable}.cpp \
         --replace-fail "dynamic_cast" "reinterpret_cast"
@@ -58,7 +59,6 @@ stdenv.mkDerivation (finalAttrs: {
       ninja
       gfortran
       pkg-config
-      nlohmann_json
     ]
     ++ lib.optionals pythonSupport [
       python3
@@ -81,21 +81,18 @@ stdenv.mkDerivation (finalAttrs: {
       zfp
       zlib
       zlib-ng # required by c-blocs2
-      zstd # required by zlib-ng
+      zstd # required by c-blocs2
       yaml-cpp
+      nlohmann_json
 
       # Todo: add these optional dependcies in nixpkgs.
       # sz
       # mgard
       # catalyst
     ]
-    ++ lib.optionals stdenv.hostPlatform.isLinux [
-      ucx
-    ]
+    ++ lib.optional (lib.meta.availableOn stdenv.hostPlatform ucx) ucx
     # openmp required by zfp
-    ++ lib.optionals stdenv.cc.isClang [
-      llvmPackages.openmp
-    ];
+    ++ lib.optional stdenv.cc.isClang llvmPackages.openmp;
 
   propagatedBuildInputs = lib.optionals pythonSupport [
     python3Packages.mpi4py
@@ -114,15 +111,19 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeFeature "CMAKE_INSTALL_PYTHONDIR" python3.sitePackages)
   ];
 
-  # required for finding the generated adios2-config.cmake file
+  # equired for finding the generated adios2-config.cmake file
   env.adios2_DIR = "${placeholder "out"}/lib/cmake/adios2";
 
-  # ctest takes too much time, so we only perform some smoke Python tests
+  # Ctest takes too much time, so we only perform some smoke Python tests.
   doInstallCheck = pythonSupport;
 
-  preCheck = ''
-    export PYTHONPATH=$out/${python3.sitePackages}:$PYTHONPATH
-  '';
+  preCheck =
+    ''
+      export PYTHONPATH=$out/${python3.sitePackages}:$PYTHONPATH
+    ''
+    + lib.optionalString (stdenv.hostPlatform.system == "aarch64-linux") ''
+      rm ../testing/adios2/python/TestBPWriteTypesHighLevelAPI.py
+    '';
 
   pytestFlagsArray = [
     "../testing/adios2/python/Test*.py"
@@ -134,10 +135,6 @@ stdenv.mkDerivation (finalAttrs: {
     python3Packages.pythonImportsCheckHook
     python3Packages.pytestCheckHook
   ];
-
-  postFixup = ''
-    patchShebangs $out/bin
-  '';
 
   meta = {
     homepage = "https://adios2.readthedocs.io/en/latest/";

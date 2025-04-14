@@ -9,15 +9,15 @@
 }:
 
 buildPythonPackage rec {
-  version = "2023.0.0-unstable-2025-03-28";
+  version = "2025.04.0";
   pname = "pyadjoint-ad";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "dolfin-adjoint";
     repo = "pyadjoint";
-    rev = "0b1348021fb3bc69504e3e7ec4f90f21ba1b3822";
-    hash = "sha256-r59y77aVyRfzBE2vpwJIMj2inDkAB+vP4ZAnuuKe83I=";
+    tag = version;
+    hash = "sha256-ZNd8aJJ87OfQakScrkYqhCAh7qGctW/uqIoQjX5VEhI=";
   };
 
   build-system = [

@@ -21,15 +21,15 @@ let
   };
 in
 buildPythonPackage rec {
-  version = "2025.04.0-unstable-2025-04-02";
+  version = "0.14-unstable-2025-04-10";
   pname = "firdrake-fiat";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "firedrakeproject";
     repo = "fiat";
-    rev = "4ca4d68a378e60f706a87ee257e2d069372cc09e";
-    hash = "sha256-HDhr/FrOD4qtou3V+JNph/5fKI3PgpyB36LptMMeRgA=";
+    rev = "ce61877bcb94dcebc13c74cf88048ab3550d737f";
+    hash = "sha256-EFTXiUDYLFNsJSlUzHiNkTeoGBhruJmBi6kXMio7mx0=";
   };
 
   postPatch = ''

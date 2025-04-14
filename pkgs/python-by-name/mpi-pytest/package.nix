@@ -12,7 +12,7 @@
 }:
 
 buildPythonPackage rec {
-  version = "2025.2.0";
+  version = "2025.4.0";
   pname = "mpi-pytest";
   pyproject = true;
 
@@ -20,17 +20,13 @@ buildPythonPackage rec {
     owner = "firedrakeproject";
     repo = "mpi-pytest";
     tag = "v${version}";
-    hash = "sha256-8VRzLK5RrRgmdkBFLAcG2Ehf/4qKpj1j4FymfmGgTZg=";
+    hash = "sha256-r9UB5H+qAJc6k2SVAiOCI2yRDLNv2zKRmfrAan+cX9I=";
   };
 
-  patches = [
-    # This commit added some basic test examples
-    (fetchpatch {
-      name = "changing-to-boolea-argument";
-      url = "https://github.com/firedrakeproject/mpi-pytest/commit/b94617b428ce33df85e9ea5ce8bed1e0bf295a34.patch";
-      hash = "sha256-nwaA6mB5AKcEbXte0TYp7hthnzjotW+ujFJ224A1Tvg=";
-    })
-  ];
+  postPatch = lib.optionalString (mpi.pname == "openmpi") ''
+    substituteInPlace pytest_mpi/plugin.py \
+      --replace-fail '"-genv", CHILD_PROCESS_FLAG, "1"' '"-x", f"{CHILD_PROCESS_FLAG}=1"'
+  '';
 
   build-system = [
     setuptools
@@ -39,7 +35,6 @@ buildPythonPackage rec {
   dependencies = [
     mpi4py
     pytest
-    mpi
   ];
 
   pythonImportsCheck = [
@@ -51,12 +46,6 @@ buildPythonPackage rec {
     mpiCheckPhaseHook
     mpi
   ];
-
-  pytestCheckPhase = ''
-    pytest -m "not parallel or parallel[1]"
-    mpiexec -n 2 pytest -m "parallel[2]"
-    mpiexec -n 3 pytest -m "parallel[3]"
-  '';
 
   meta = {
     homepage = "https://github.com/firedrakeproject/mpi-pytest";

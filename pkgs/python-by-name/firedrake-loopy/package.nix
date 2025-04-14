@@ -19,14 +19,14 @@
 }:
 
 buildPythonPackage rec {
-  version = "20250218.0";
+  version = "2024.1-unstable-2025-02-05";
   name = "firedrake-loopy";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "firedrakeproject";
     repo = "loopy";
-    tag = "Firedrake_${version}";
+    rev = "27aead574b5188de8e0d98518c93f1863951fc4b";
     hash = "sha256-2DaRhSXnvmjcRm1YNKn6sj6iZAfQCRLbIr1naKGb0kw=";
     fetchSubmodules = true; # submodule at `loopy/target/c/compyte`
   };

@@ -33,7 +33,7 @@
   firedrake-ufl,
   firedrake-fiat,
   pyadjoint-ad,
-  loopy,
+  firedrake-loopy,
   libsupermesh,
 
   # lint
@@ -52,6 +52,7 @@
   numpydoc,
 
   # tests
+  mpi,
   ipympl,
   vtk,
   # pytest-split,
@@ -64,27 +65,30 @@
   mpiCheckPhaseHook,
 
   # passthru.tests
+  mpich,
   firedrake,
-  runCommand,
   pytestCheckHook,
 }:
 buildPythonPackage rec {
-  version = "0.14-unstable-2025-04-04";
+  version = "0.14-unstable-2025-04-14";
   pname = "firedrake";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "firedrakeproject";
     repo = "firedrake";
-    rev = "73d63aa95d4a9f6a454254840b95367600434a5f";
-    hash = "sha256-28dQmX6+Al30ZeImORjI8vwCJ1LxRK9jZIYGflqKH8U=";
+    rev = "d3c02bcbf5cca0ff71b3306d7d2796ef6bbf6945";
+    hash = "sha256-2AsymQj6qn9NkI320PIKh/OALV1hl20Dgyi/ij/gK+o=";
   };
 
   postPatch =
     ''
       substituteInPlace pyproject.toml --replace-fail \
-        "petsc4py==3.22.2" \
+        "petsc4py==3.23.0" \
         "petsc4py"
+
+      substituteInPlace tests/pyop2/test_callables.py \
+        --replace-fail "-llapack" "-L${lib.getLib petsc4py.petscPackages.lapack}/lib -llapack"
     ''
     + lib.optionalString stdenv.hostPlatform.isLinux ''
       substituteInPlace firedrake/petsc.py --replace-fail \
@@ -104,6 +108,10 @@ buildPythonPackage rec {
     setuptools
     cython
     pybind11
+  ];
+
+  buildInputs = [
+    petsc4py.petscPackages.mpi
   ];
 
   dependencies = [
@@ -126,7 +134,7 @@ buildPythonPackage rec {
     firedrake-ufl
     firedrake-fiat
     pyadjoint-ad
-    loopy
+    firedrake-loopy
     libsupermesh
   ];
 
@@ -173,9 +181,16 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "firedrake" ];
 
-  nativeCheckInputs = [ mpiCheckPhaseHook ] ++ optional-dependencies.test;
+  nativeCheckInputs = [
+    mpiCheckPhaseHook
+    petsc4py.petscPackages.mpi
+  ] ++ optional-dependencies.test;
 
-  installCheckPhase = ''
+  preCheck = ''
+    export VIRTUAL_ENV=$HOME
+  '';
+
+  checkPhase = ''
     runHook preCheck
 
     make check
@@ -184,47 +199,19 @@ buildPythonPackage rec {
   '';
 
   passthru.tests = {
-    fullCheck =
-      runCommand "firedrake-full-check"
-        {
-          inherit src;
-          nativeBuildInputs = [
-            firedrake
-            pytestCheckHook
-            mpiCheckPhaseHook
-          ] ++ optional-dependencies.test;
-          # PYOP2_CFLAGS is used to pass some badly written example tests
-          env.PYOP2_CFLAGS = toString [
-            "-Wno-incompatible-pointer-types"
-          ];
-
-          pytestFlags = [
-            "-n $NIX_BUILD_CORES"
-            "--timeout=480"
-            "--timeout-method=thread"
-            "-o faulthandler_timeout=540"
-          ];
-
-          disabledTests = [
-            "test_dat_illegal_name"
-            "test_dat_illegal_set"
-            "parallel"
-          ];
-        }
-        ''
-          runPhase unpackPhase
-
-          substituteInPlace tests/pyop2/test_callables.py \
-            --replace-fail "-llapack" "-L${lib.getLib petsc4py.petscPackages.lapack}/lib -llapack"
-
-          mkdir -p $out
-          export TMPDIR=$out
-          export HOME=$TMPDIR
-          export VIRTUAL_ENV=$HOME
-          cd tests
-
-          pytestCheckPhase
-        '';
+    fullCheck = firedrake.overrideAttrs (oldAttrs: {
+      nativeCheckInputs = oldAttrs ++ [ pytestCheckHook ];
+      # PYOP2_CFLAGS is used to pass some badly written example tests
+      env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
+      pytestFlagsArray = [
+        "tests"
+      ];
+      disabledTests = [
+        "test_dat_illegal_name"
+        "test_dat_illegal_set"
+      ];
+    });
+    mpich = passthru.tests.fullCheck.override { petsc4py = petsc4py.override { mpi = mpich; }; };
   };
 
   meta = {
