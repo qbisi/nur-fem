@@ -75,6 +75,7 @@ let
     hdf5 = petsc4py.petscPackages.hdf5;
     mpi4py = mpi4py';
   };
+  mpi-pytest' = mpi-pytest.override { mpi4py = mpi4py'; };
 in
 buildPythonPackage rec {
   version = "0.14-unstable-2025-04-14";
@@ -149,7 +150,7 @@ buildPythonPackage rec {
     dev = [
       build
       cython
-      mpi-pytest
+      mpi-pytest'
       pybind11
       pytest
       setuptools
@@ -160,7 +161,7 @@ buildPythonPackage rec {
       pylit
       nbval
       pytest
-      mpi-pytest
+      mpi-pytest'
       pytest-xdist
       pytest-timeout
       ipympl # needed for notebook testing

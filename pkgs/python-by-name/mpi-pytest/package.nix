@@ -5,7 +5,6 @@
   buildPythonPackage,
   setuptools,
   mpi4py,
-  mpi,
   pytest,
   pytestCheckHook,
   mpiCheckPhaseHook,
@@ -23,7 +22,7 @@ buildPythonPackage rec {
     hash = "sha256-r9UB5H+qAJc6k2SVAiOCI2yRDLNv2zKRmfrAan+cX9I=";
   };
 
-  postPatch = lib.optionalString (mpi.pname == "openmpi") ''
+  postPatch = lib.optionalString (mpi4py.mpi.pname == "openmpi") ''
     substituteInPlace pytest_mpi/plugin.py \
       --replace-fail '"-genv", CHILD_PROCESS_FLAG, "1"' '"-x", f"{CHILD_PROCESS_FLAG}=1"'
   '';
@@ -44,7 +43,7 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     pytestCheckHook
     mpiCheckPhaseHook
-    mpi
+    mpi4py.mpi
   ];
 
   meta = {
