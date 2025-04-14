@@ -29,7 +29,9 @@ buildPythonPackage rec {
     mpi
   ];
 
-  env.MPI4PY_BUILD_MPIABI = 1;
+  dependencies = [
+    mpi
+  ];
 
   pythonImportsCheck = [ "mpi4py" ];
 

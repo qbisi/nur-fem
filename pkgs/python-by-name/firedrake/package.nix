@@ -69,6 +69,13 @@
   firedrake,
   pytestCheckHook,
 }:
+let
+  mpi4py' = mpi4py.override { mpi = petsc4py.petscPackages.mpi; };
+  h5py' = h5py.override {
+    hdf5 = petsc4py.petscPackages.hdf5;
+    mpi4py = mpi4py';
+  };
+in
 buildPythonPackage rec {
   version = "0.14-unstable-2025-04-14";
   pname = "firedrake";
@@ -118,8 +125,8 @@ buildPythonPackage rec {
     siphash24
     decorator
     cachetools
-    mpi4py
-    (h5py.override { hdf5 = petsc4py.petscPackages.hdf5; })
+    mpi4py'
+    h5py'
     petsc4py
     numpy
     packaging
@@ -211,7 +218,7 @@ buildPythonPackage rec {
         "test_dat_illegal_set"
       ];
     });
-    mpich = passthru.tests.fullCheck.override { petsc4py = petsc4py.override { mpi = mpich; }; };
+    mpich = firedrake.override { petsc4py = petsc4py.override { mpi = mpich; }; };
   };
 
   meta = {
