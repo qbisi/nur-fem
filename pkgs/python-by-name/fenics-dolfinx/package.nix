@@ -154,8 +154,11 @@ buildPythonPackage rec {
   ];
 
   disabledTests = [
+    # require legacy cffi
     "test_cffi_expression"
     "test_hexahedron_mesh"
+    # might fail with pytest-xdist
+    "interpolation_non_affine_nonmatching_maps"
   ];
 
   passthru = {
