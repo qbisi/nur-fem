@@ -5,7 +5,7 @@ Supported fem software
 - [x] firedrake
 - [x] ngsolve
 - [x] fenics
-- [ ] mfem
+- [x] mfem
 - [ ] asfem
 - [ ] freefem
 
@@ -40,8 +40,7 @@ direnv allow .
 
 ## for graphic program
 ```
-nixGLIntel python demo.py
-nixGLNvidia python demo.py
+add nixGLHook in your shell packages
 ```
 
 # How to uninstall
