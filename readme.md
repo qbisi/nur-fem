@@ -15,6 +15,7 @@ Supported fem software
 ### single user mode (recommended)
 ```
 sh <(curl -L https://nixos.org/nix/install) --no-daemon
+source ~/.nix-profile/etc/profile.d/nix.sh
 ```
 ### docker
 ```
@@ -25,7 +26,6 @@ docker run -it ghcr.io/nixos/nix
 ```
 mkdir -p ~/.config/nix
 echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
-source ~/.nix-profile/etc/profile.d/nix.sh
 ```
 
 ## install direnv and nix-direnv
