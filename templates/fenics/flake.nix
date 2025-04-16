@@ -76,8 +76,8 @@
             pkgs.mkShell {
               packages = [
                 python-env
+
                 # add extra pkgs here
-                pkgs.petsc.petscPackages.mpi
                 pkgs.nixGLHook
                 # pkgs.paraview
               ];

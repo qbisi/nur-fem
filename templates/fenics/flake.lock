@@ -63,11 +63,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1744650341,
-        "narHash": "sha256-NMPYYlDHaML/MaywMfENi4pWrtk/j/89gmJ/QnyfBoc=",
+        "lastModified": 1744830265,
+        "narHash": "sha256-bIywvrGuH9xyIeUhtiNEllq6OHbkEkyeKjmnOXCwjv8=",
         "owner": "qbisi",
         "repo": "nur-fem",
-        "rev": "35ef099b7782f69a91d7c92789045615c1bcc54b",
+        "rev": "a6c0cd5b564f65b8fb3db814e6e236ec51731239",
         "type": "github"
       },
       "original": {

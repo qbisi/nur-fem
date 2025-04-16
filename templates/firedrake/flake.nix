@@ -43,6 +43,7 @@
                 inputs.nur-fem.overlays.default
                 (final: prev: {
                   petsc = prev.petsc.override {
+                    # custom petsc configuration
                     # mpi = prev.mpich;
                     # blasProvider = prev.mkl;
                     # scalarType = "complex";
@@ -66,16 +67,20 @@
                   ipykernel
                   ipympl
                   vtk
+
                   # add extra python module here
+                  # available python module can be searched on https://search.nixos.org/
+                  pyvisata
+                  pyvistaqt
                 ]
               );
             in
             pkgs.mkShell {
               packages = [
                 python-env
+
                 # add extra pkgs here
-                pkgs.petsc.petscPackages.mpi
-                pkgs.nixGLHook
+                pkgs.nixGLHook   # required for running grphic program via ssh x11 forwarding
                 # pkgs.paraview
               ];
 
