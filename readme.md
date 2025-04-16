@@ -63,6 +63,7 @@ programs.direnv = {
 nix flake new -t github:qbisi/nur-fem#firedrake fem-demo
 cd fem-demo
 direnv allow .
+mpiexec -np 1 python poission.py
 ```
 
 # How to uninstall
