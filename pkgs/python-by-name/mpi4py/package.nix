@@ -5,6 +5,7 @@
   cython,
   setuptools,
   mpi,
+  toPythonModule,
   mpiCheckPhaseHook,
 }:
 
@@ -30,7 +31,7 @@ buildPythonPackage rec {
   ];
 
   dependencies = [
-    mpi
+    (toPythonModule mpi)
   ];
 
   pythonImportsCheck = [ "mpi4py" ];
