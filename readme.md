@@ -12,11 +12,11 @@ Supported fem software
 
 # How to start
 ## install nix (for none nixos user)
-single user mode is recommended
+### single user mode (recommended)
 ```
 sh <(curl -L https://nixos.org/nix/install) --no-daemon
 ```
-### alternatively try in docker
+### docker
 ```
 docker run -it ghcr.io/nixos/nix
 ```
