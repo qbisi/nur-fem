@@ -11,10 +11,14 @@ Supported fem software
 
 
 # How to start
-## install nix(for none nixos user)
+## install nix (for none nixos user)
 single user mode is recommended
 ```
 sh <(curl -L https://nixos.org/nix/install) --no-daemon
+```
+### alternatively try in docker
+```
+docker run -it ghcr.io/nixos/nix
 ```
 
 ## enable nix experimental feature
@@ -24,11 +28,34 @@ echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
 ```
 
 ## install direnv and nix-direnv
+### bash
 ```
 nix profile install nixpkgs#{nix-direnv,direnv}
-echo 'eval "$(~/.nix-profile/bin/direnv hook bash)"' >> ~/.bashrc
-mkdir -p ~/.config/direnv
-echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" > ~/.config/direnv/direnvrc
+
+cat <<EOF >> ~/.bashrc
+eval "\$(~/.nix-profile/bin/direnv hook bash)"
+source ~/.nix-profile/share/nix-direnv/direnvrc
+EOF
+
+source ~/.bashrc
+```
+### zsh
+```
+nix profile install nixpkgs#{nix-direnv,direnv}
+
+cat <<EOF >> ~/.zshrc
+eval "\$(~/.nix-profile/bin/direnv hook zsh)"
+source ~/.nix-profile/share/nix-direnv/direnvrc
+EOF
+
+source ~/.zshrc
+```
+### home-manager
+```
+programs.direnv = {
+  enable = true;
+  nix-direnv.enable = true;
+};
 ```
 
 ## init project from template
@@ -36,11 +63,6 @@ echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" > ~/.config/direnv/di
 nix flake new -t github:qbisi/nur-fem#firedrake fem-demo
 cd fem-demo
 direnv allow .
-```
-
-## for graphic program
-```
-add nixGLHook in your shell packages
 ```
 
 # How to uninstall
