@@ -68,11 +68,13 @@ stdenv.mkDerivation (finalAttrs: {
       "-DCLANGXX=${clangWrapped}/bin/clang++"
       "-DENABLE_REMOTE_CLIENT=ON"
       "-DENABLE_REMOTE_SERVER=ON"
-      "-DLLC_HOST_CPU=generic"
     ]
     # Only x86_64 supports "distro" which allows runtime detection of SSE/AVX
     ++ lib.optionals stdenv.hostPlatform.isx86_64 [
       "-DKERNELLIB_HOST_CPU_VARIANTS=distro"
+    ]
+    ++ lib.optionals (!stdenv.hostPlatform.isx86_64) [
+      "-DLLC_HOST_CPU=generic"
     ];
 
   nativeBuildInputs = [

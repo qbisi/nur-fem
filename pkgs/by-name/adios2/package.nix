@@ -95,7 +95,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optional stdenv.cc.isClang llvmPackages.openmp;
 
   propagatedBuildInputs = lib.optionals pythonSupport [
-    python3Packages.mpi4py
+    (python3Packages.mpi4py.override { inherit mpi; })
     python3Packages.numpy
   ];
 

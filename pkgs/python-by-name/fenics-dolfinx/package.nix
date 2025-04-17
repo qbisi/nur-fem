@@ -41,6 +41,10 @@ let
     petsc = petsc4py;
     mpi = petsc4py.petscPackages.mpi;
   };
+  adios2' = adios2.override {
+    mpi = petsc4py.petscPackages.mpi;
+    hdf5-mpi = petsc4py.petscPackages.hdf5;
+  };
   dolfinx = stdenv.mkDerivation (finalAttrs: {
     version = "0.9.0.post1";
     pname = "dolfinx";
@@ -60,7 +64,7 @@ let
     ];
 
     buildInputs = [
-      adios2
+      adios2'
       kahip
       spdlog
       pugixml
@@ -141,7 +145,7 @@ buildPythonPackage rec {
     fenics-basix
     fenics-ffcx
     fenics-ufl
-    adios2
+    adios2'
     kahip
   ];
 
@@ -176,9 +180,9 @@ buildPythonPackage rec {
       complex = fenics-dolfinx.override {
         petsc4py = petsc4py.override { scalarType = "complex"; };
       };
-      mpich = fenics-dolfinx.override {
-        petsc4py = petsc4py.override { mpi = mpich; };
-      };
+      # mpich = fenics-dolfinx.override {
+      #   petsc4py = petsc4py.override { mpi = mpich; };
+      # };
       fullDeps = fenics-dolfinx.override {
         petsc4py = petsc4py.override { withFullDeps = true; };
         withParmetis = true;
