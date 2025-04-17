@@ -30,9 +30,17 @@
   writableTmpDirAsHomeHook,
   withParmetis ? false,
   fenics-dolfinx,
+
+  # passthru.tests
+  mpich,
 }:
 assert petsc4py.mpiSupport;
 let
+  mpi4py' = (mpi4py.override { mpi = petsc4py.petscPackages.mpi; });
+  slepc4py' = slepc4py.override {
+    petsc = petsc4py;
+    mpi = petsc4py.petscPackages.mpi;
+  };
   dolfinx = stdenv.mkDerivation (finalAttrs: {
     version = "0.9.0.post1";
     pname = "dolfinx";
@@ -61,7 +69,7 @@ let
       petsc4py.petscPackages.scotch
       petsc4py.petscPackages.hdf5
       petsc4py
-      slepc4py
+      slepc4py'
       fenics-basix
       fenics-ffcx
     ] ++ lib.optional withParmetis petsc4py.petscPackages.parmetis;
@@ -127,9 +135,9 @@ buildPythonPackage rec {
     numpy
     cffi
     setuptools
-    (mpi4py.override { mpi = petsc4py.petscPackages.mpi; })
+    mpi4py'
     petsc4py
-    slepc4py
+    slepc4py'
     fenics-basix
     fenics-ffcx
     fenics-ufl
@@ -165,23 +173,16 @@ buildPythonPackage rec {
 
   passthru = {
     tests = {
-      complex =
-        let
-          petsc = petsc4py.override { scalarType = "complex"; };
-        in
-        fenics-dolfinx.override {
-          petsc4py = petsc;
-          slepc4py = slepc4py.override { inherit petsc; };
-        };
-      fullDeps =
-        let
-          petsc = petsc4py.override { withFullDeps = true; };
-        in
-        fenics-dolfinx.override {
-          petsc4py = petsc;
-          slepc4py = slepc4py.override { inherit petsc; };
-          withParmetis = true;
-        };
+      complex = fenics-dolfinx.override {
+        petsc4py = petsc4py.override { scalarType = "complex"; };
+      };
+      mpich = fenics-dolfinx.override {
+        petsc4py = petsc4py.override { mpi = mpich; };
+      };
+      fullDeps = fenics-dolfinx.override {
+        petsc4py = petsc4py.override { withFullDeps = true; };
+        withParmetis = true;
+      };
     };
   };
 }

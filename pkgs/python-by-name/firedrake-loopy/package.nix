@@ -64,7 +64,6 @@ buildPythonPackage rec {
   meta = {
     homepage = "https://github.com/firedrakeproject/loopy";
     description = "Copy of upstream loopy for use with Firedrake";
-    changelog = "https://github.com/firedrakeproject/loopy/releases/tag/${src.tag}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ qbisi ];
   };

@@ -40,7 +40,7 @@
   withFftw ? withFullDeps,
   withSuperLu ? withCommonDeps,
   withSuitesparse ? withCommonDeps,
-  withSuperLuDist ? withCommonDeps,
+  withSuperLuDist ? withCommonDeps && mpiSupport,
 
   # External libraries
   blas,
@@ -79,6 +79,7 @@ assert withPtscotch -> (mpiSupport && withZlib);
 assert withScalapack -> mpiSupport;
 assert (withMumps && mpiSupport) -> withScalapack;
 assert withHypre -> mpiSupport;
+assert withSuperLuDist -> mpiSupport;
 
 let
   petscPackages = lib.makeScope newScope (self: {
