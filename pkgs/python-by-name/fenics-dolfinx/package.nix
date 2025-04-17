@@ -180,9 +180,9 @@ buildPythonPackage rec {
       complex = fenics-dolfinx.override {
         petsc4py = petsc4py.override { scalarType = "complex"; };
       };
-      # mpich = fenics-dolfinx.override {
-      #   petsc4py = petsc4py.override { mpi = mpich; };
-      # };
+      mpich = fenics-dolfinx.override {
+        petsc4py = petsc4py.override { mpi = mpich; };
+      };
       fullDeps = fenics-dolfinx.override {
         petsc4py = petsc4py.override { withFullDeps = true; };
         withParmetis = true;
