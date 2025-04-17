@@ -28,6 +28,7 @@
   pytest-xdist,
   pytestCheckHook,
   writableTmpDirAsHomeHook,
+  mpiCheckPhaseHook,
   withParmetis ? false,
   fenics-dolfinx,
 
@@ -44,6 +45,9 @@ let
   adios2' = adios2.override {
     mpi = petsc4py.petscPackages.mpi;
     hdf5-mpi = petsc4py.petscPackages.hdf5;
+  };
+  kahip' = kahip.override {
+    mpi = petsc4py.petscPackages.mpi;
   };
   dolfinx = stdenv.mkDerivation (finalAttrs: {
     version = "0.9.0.post1";
@@ -65,7 +69,7 @@ let
 
     buildInputs = [
       adios2'
-      kahip
+      kahip'
       spdlog
       pugixml
       boost
@@ -139,14 +143,14 @@ buildPythonPackage rec {
     numpy
     cffi
     setuptools
-    mpi4py'
-    petsc4py
-    slepc4py'
     fenics-basix
     fenics-ffcx
     fenics-ufl
+    mpi4py'
+    petsc4py
+    slepc4py'
     adios2'
-    kahip
+    kahip'
   ];
 
   doCheck = true;
@@ -157,6 +161,7 @@ buildPythonPackage rec {
     pytest-xdist
     pytestCheckHook
     writableTmpDirAsHomeHook
+    mpiCheckPhaseHook
   ];
 
   preCheck = ''
