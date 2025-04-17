@@ -105,8 +105,8 @@ buildPythonPackage rec {
     ''
     + lib.optionalString stdenv.hostPlatform.isDarwin ''
       substituteInPlace firedrake/petsc.py --replace-fail \
-        'program = ["otool"]' \
-        'program = ["${stdenv.cc.bintools.bintools}/bin/otool"]'
+        'program = ["otool"' \
+        'program = ["${stdenv.cc.bintools.bintools}/bin/otool"'
     '';
 
   pythonRelaxDeps = true;
@@ -181,8 +181,9 @@ buildPythonPackage rec {
     ];
   };
 
-  postInstall = ''
-    rm -rf firedrake pyop2 tinyasm tsfc
+  postFixup = lib.optionalString stdenv.hostPlatform.isDarwin ''
+    install_name_tool -add_rpath ${libsupermesh}/${python.sitePackages}/libsupermesh/lib \
+      $out/${python.sitePackages}/firedrake/cython/supermeshimpl.cpython-*-darwin.so
   '';
 
   doCheck = true;
@@ -195,6 +196,7 @@ buildPythonPackage rec {
   ] ++ optional-dependencies.test;
 
   preCheck = ''
+    rm -rf firedrake pyop2 tinyasm tsfc
     export VIRTUAL_ENV=$HOME
   '';
 

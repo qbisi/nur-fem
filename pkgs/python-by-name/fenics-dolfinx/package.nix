@@ -10,8 +10,9 @@
   cmake,
   ninja,
   pkg-config,
-  mpi,
-  pkgs,
+  spdlog,
+  pugixml,
+  boost,
   numpy,
   cffi,
   mpi4py,
@@ -30,6 +31,7 @@
   withParmetis ? false,
   fenics-dolfinx,
 }:
+assert petsc4py.mpiSupport;
 let
   dolfinx = stdenv.mkDerivation (finalAttrs: {
     version = "0.9.0.post1";
@@ -50,19 +52,19 @@ let
     ];
 
     buildInputs = [
-      mpi
       adios2
       kahip
-      pkgs.scotch
-      pkgs.spdlog
-      pkgs.pugixml
-      pkgs.boost
-      pkgs.hdf5-mpi
+      spdlog
+      pugixml
+      boost
+      petsc4py.petscPackages.mpi
+      petsc4py.petscPackages.scotch
+      petsc4py.petscPackages.hdf5
       petsc4py
       slepc4py
       fenics-basix
       fenics-ffcx
-    ] ++ lib.optional withParmetis pkgs.parmetis;
+    ] ++ lib.optional withParmetis petsc4py.petscPackages.parmetis;
 
     cmakeFlags = [
       (lib.cmakeBool "DOLFINX_ENABLE_ADIOS2" true)
@@ -108,24 +110,24 @@ buildPythonPackage rec {
     cmake
     ninja
     pkg-config
-    mpi
+    petsc4py.petscPackages.mpi
   ];
 
   dontUseCmakeConfigure = true;
 
-  buildInputs = with pkgs; [
+  buildInputs = [
     dolfinx
     spdlog
     pugixml
     boost
-    hdf5-mpi
+    petsc4py.petscPackages.hdf5
   ];
 
   dependencies = [
     numpy
     cffi
     setuptools
-    mpi4py
+    (mpi4py.override { mpi = petsc4py.petscPackages.mpi; })
     petsc4py
     slepc4py
     fenics-basix

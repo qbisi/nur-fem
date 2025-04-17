@@ -26,6 +26,10 @@
       pythonOverrides =
         final: prev:
         lib.packagesFromDirectoryRecursive {
+          inherit (self) callPackage;
+          directory = ./by-name;
+        }
+        // lib.packagesFromDirectoryRecursive {
           inherit (final) callPackage;
           directory = ./python-by-name;
         }
