@@ -220,7 +220,7 @@ buildPythonPackage rec {
         "test_dat_illegal_name"
         "test_dat_illegal_set"
       ];
-      checkPhase = ''
+      installCheckPhase = ''
         runHook preCheck
 
         pytestCheckPhase
