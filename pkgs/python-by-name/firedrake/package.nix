@@ -220,6 +220,13 @@ buildPythonPackage rec {
         "test_dat_illegal_name"
         "test_dat_illegal_set"
       ];
+      checkPhase = ''
+        runHook preCheck
+
+        pytestCheckPhase
+
+        runHook postCheck
+      '';
     });
     mpich = firedrake.override { petsc4py = petsc4py.override { mpi = mpich; }; };
   };

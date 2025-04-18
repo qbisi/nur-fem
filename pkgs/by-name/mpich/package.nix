@@ -12,8 +12,9 @@
   darwin,
   # either libfabric or ucx work for ch4backend on linux. On darwin, neither of
   # these libraries currently build so this argument is ignored on Darwin.
-  ch4backend ? ucx,
+  ch4backend ? libfabric,
   ucx,
+  libfabric,
   # Process managers to build (`--with-pm`),
   # cf. https://github.com/pmodels/mpich/blob/b80a6d7c24defe7cdf6c57c52430f8075a0a41d6/README.vin#L562-L586
   withPm ? [
