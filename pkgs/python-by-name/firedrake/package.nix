@@ -192,6 +192,7 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     mpiCheckPhaseHook
+    pytestCheckHook
     petsc4py.petscPackages.mpi
   ] ++ optional-dependencies.test;
 
@@ -210,7 +211,6 @@ buildPythonPackage rec {
 
   passthru.tests = {
     fullCheck = firedrake.overrideAttrs (oldAttrs: {
-      nativeCheckInputs = oldAttrs ++ [ pytestCheckHook ];
       # PYOP2_CFLAGS is used to pass some badly written example tests
       env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
       pytestFlagsArray = [
