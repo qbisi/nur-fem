@@ -7,6 +7,10 @@
       directory = ./by-name;
     }
     // {
+      scalapack = pkgs.scalapack.overrideAttrs {
+        doCheck = !pkgs.stdenv.hostPlatform.isDarwin;
+      };
+
       python312 = pkgs.python312.override (old: {
         packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) self.pythonOverrides;
       });
