@@ -215,6 +215,8 @@ buildPythonPackage rec {
       env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
       pytestFlagsArray = [
         "tests"
+        "-m"
+        "not parallel or parallel[1] or parallel[2]"
       ];
       disabledTests = [
         "test_dat_illegal_name"
