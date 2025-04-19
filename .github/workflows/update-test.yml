@@ -3,7 +3,7 @@ name: Rebase test branch on master and add a commit
 on:
   push:
     branches:
-      - master  # Run on every master commit
+      - stage  # Run on every stage commit
 
 permissions:
   contents: write
