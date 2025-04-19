@@ -82,7 +82,7 @@
                 };
                 hydraTests = lib.mapAttrs (_: v: lib.mapAttrs (_: package: package.tests or { }) v) hydraCompile;
               in
-              lib.optionalAttrs enable hydraCompile;
+              lib.optionalAttrs enable hydraTests;
           };
 
         transposition.hydraJobs.adHoc = true;
