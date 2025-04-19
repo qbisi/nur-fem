@@ -70,20 +70,19 @@
             hydraJobs =
               let
                 enable = pkgs.stdenv.hostPlatform.system != "x86_64-darwin";
+                hydraCompile = {
+                  packages = lib.packagesFromDirectoryRecursive {
+                    inherit (self'.legacyPackages) callPackage;
+                    directory = ./pkgs/by-name;
+                  };
+                  python312Packages = lib.packagesFromDirectoryRecursive {
+                    inherit (self'.legacyPackages.python312Packages) callPackage;
+                    directory = ./pkgs/python-by-name;
+                  };
+                };
+                hydraTests = lib.mapAttrs (_: v: lib.mapAttrs (_: package: package.tests or { }) v) hydraCompile;
               in
-              lib.optionalAttrs enable {
-                packages = lib.packagesFromDirectoryRecursive {
-                  inherit (self'.legacyPackages) callPackage;
-                  directory = ./pkgs/by-name;
-                };
-                python312Packages = lib.packagesFromDirectoryRecursive {
-                  inherit (self'.legacyPackages.python312Packages) callPackage;
-                  directory = ./pkgs/python-by-name;
-                };
-                tests = lib.mapAttrs (_: v: lib.mapAttrs (_: package: package.tests or { }) v) (
-                  builtins.removeAttrs config.hydraJobs [ "tests" ]
-                );
-              };
+              lib.optionalAttrs enable hydraCompile;
           };
 
         transposition.hydraJobs.adHoc = true;
