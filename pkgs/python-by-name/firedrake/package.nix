@@ -214,6 +214,8 @@ buildPythonPackage rec {
       # PYOP2_CFLAGS is used to pass some badly written example tests
       env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
       pytestFlagsArray = [
+        "-n"
+        "auto"
         "tests"
       ];
       disabledTests = [
