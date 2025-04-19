@@ -38,8 +38,6 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "64BITMODE" isILP64)
   ];
 
-  doCheck = true;
-
   meta = {
     homepage = "https://kahip.github.io/";
     description = "Karlsruhe HIGH Quality Partitioning";

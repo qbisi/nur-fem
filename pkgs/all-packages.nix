@@ -72,14 +72,6 @@
               python3Packages = final;
             }
           );
-
-          kahip = prev.toPythonModule (
-            final.pkgs.kahip.override {
-              pythonSupport = true;
-              python3 = prev.python;
-              python3Packages = final;
-            }
-          );
         };
     };
 
