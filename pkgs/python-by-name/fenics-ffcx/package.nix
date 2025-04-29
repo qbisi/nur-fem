@@ -60,6 +60,7 @@ buildPythonPackage rec {
     homepage = "https://github.com/fenics/ffcx";
     description = "Next generation FEniCS Form Compiler for finite element forms";
     changelog = "https://github.com/fenics/ffcx/releases/tag/${src.tag}";
+    mainProgram = "ffcx";
     license = with lib.licenses; [
       gpl3Plus
       lgpl3Plus
