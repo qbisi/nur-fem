@@ -17,20 +17,19 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "glvis";
-  version = "4.3.2";
+  version = "4.4";
 
   src = fetchFromGitHub {
     owner = "glvis";
     repo = "glvis";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-C3U1njAgz3eNgBt/Sj8t4OqXj/YCuWkjRJGGN7PklTw=";
+    hash = "sha256-1wAo/1p2guemzaoqVo9lNTiAHFC2X10Xj3Xw7Xwt1Kg=";
   };
 
   nativeBuildInputs = [
     glm
     cmake
     tinyxxd
-    xorg.libXi
   ];
 
   buildInputs =
@@ -42,6 +41,8 @@ stdenv.mkDerivation (finalAttrs: {
       libpng
       freetype
       fontconfig
+      xorg.libXi
+      xorg.libX11
     ]
     ++ lib.optionals stdenv.cc.isClang [
       llvmPackages.openmp

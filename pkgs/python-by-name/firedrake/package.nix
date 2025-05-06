@@ -51,14 +51,14 @@ let
 in
 buildPythonPackage rec {
   pname = "firedrake";
-  version = "2025.4.0";
+  version = "2025.4.0.post0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "firedrakeproject";
     repo = "firedrake";
     tag = version;
-    hash = "sha256-nciZ1+bgg9HI4ZyUtVohaoaNmPs33t1tMLbfIvPhj1k=";
+    hash = "sha256-wQOS4v/YkIwXdQq6JMvRbmyhnzvx6wj0O6aszNa5ZMw=";
   };
 
   postPatch =
@@ -81,7 +81,9 @@ buildPythonPackage rec {
         'program = ["${stdenv.cc.bintools.bintools}/bin/otool"'
     '';
 
-  pythonRelaxDeps = true;
+  pythonRelaxDeps = [
+    "decorator"
+  ];
 
   build-system = [
     cython
@@ -154,8 +156,11 @@ buildPythonPackage rec {
   meta = {
     homepage = "https://www.firedrakeproject.org";
     downloadPage = "https://github.com/firedrakeproject/firedrake";
-    description = "Automated system for the portable solution of partial differential equations using the finite element method (FEM)";
-    license = lib.licenses.lgpl3Plus;
+    description = "Automated system for the portable solution of partial differential equations using the finite element method";
+    license = with lib.licenses; [
+      bsd3
+      lgpl3Plus
+    ];
     maintainers = with lib.maintainers; [ qbisi ];
   };
 }
