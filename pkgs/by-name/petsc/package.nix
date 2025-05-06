@@ -14,12 +14,9 @@
   python3Packages,
 
   # Build options
-  openblas,
-  blasProvider ? openblas,
   debug ? false,
   scalarType ? "real",
   precision ? "double",
-  isILP64 ? false,
   mpiSupport ? true,
   fortranSupport ? true,
   pythonSupport ? false, # petsc python binding
@@ -37,10 +34,10 @@
   withMumps ? withCommonDeps,
   withP4est ? withFullDeps,
   withHypre ? withCommonDeps && mpiSupport,
-  withFftw ? withFullDeps,
+  withFftw ? withCommonDeps,
   withSuperLu ? withCommonDeps,
-  withSuitesparse ? withCommonDeps,
   withSuperLuDist ? withCommonDeps && mpiSupport,
+  withSuitesparse ? withCommonDeps,
 
   # External libraries
   blas,
@@ -56,13 +53,12 @@
   hypre,
   fftw,
   superlu,
-  suitesparse,
   superlu_dist,
+  suitesparse,
 
   # Used in passthru.tests
   petsc,
   mpich,
-  mkl,
 }:
 assert withFullDeps -> withCommonDeps;
 
@@ -72,9 +68,6 @@ assert withP4est -> (mpiSupport && withZlib);
 # Package parmetis depend on metis and mpi support
 assert withParmetis -> (withMetis && mpiSupport);
 
-# mkl conflicts with fftw
-assert withFftw -> (blasProvider.pname != "mkl");
-
 assert withPtscotch -> (mpiSupport && withZlib);
 assert withScalapack -> mpiSupport;
 assert (withMumps && mpiSupport) -> withScalapack;
@@ -83,21 +76,22 @@ assert withSuperLuDist -> mpiSupport;
 
 let
   petscPackages = lib.makeScope newScope (self: {
-    # global override options
     inherit
       mpi
+      python3
+      python3Packages
+      # global override options
       mpiSupport
       fortranSupport
       pythonSupport
       precision
-      isILP64
       ;
     enableMpi = self.mpiSupport;
 
     petscPackages = self;
     # external libraries
-    blas = self.callPackage blas.override { inherit blasProvider; };
-    lapack = self.callPackage lapack.override { lapackProvider = blasProvider; };
+    blas = self.callPackage blas.override { };
+    lapack = self.callPackage lapack.override { };
     hdf5 = self.callPackage hdf5.override {
       fortran = gfortran;
       cppSupport = !mpiSupport;
@@ -180,6 +174,11 @@ stdenv.mkDerivation (finalAttrs: {
       "--with-precision=${precision}"
       "--with-mpi=${if mpiSupport then "1" else "0"}"
     ]
+    ++ lib.optionals (!mpiSupport) [
+      "--with-cc=${stdenv.cc}/bin/${if stdenv.cc.isGNU then "gcc" else "clang"}"
+      "--with-cxx=${stdenv.cc}/bin/${if stdenv.cc.isGNU then "g++" else "clang++"}"
+      "--with-fc=${gfortran}/bin/gfortran"
+    ]
     ++ lib.optionals mpiSupport [
       "--with-cc=${lib.getDev mpi}/bin/mpicc"
       "--with-cxx=${lib.getDev mpi}/bin/mpicxx"
@@ -218,6 +217,30 @@ stdenv.mkDerivation (finalAttrs: {
 
   enableParallelBuilding = true;
 
+  # Ensure petscvariables contains absolute paths for compilers and flags so that downstream
+  # packages relying on PETSc's runtime configuration (e.g. form compilers, code generators)
+  # can correctly compile and link generated code
+  postInstall = lib.concatStringsSep "\n" (
+    map (
+      package:
+      let
+        pname = package.pname or package.name;
+        prefix =
+          if (pname == "blas" || pname == "lapack") then
+            "BLASLAPACK"
+          else
+            lib.toUpper (builtins.elemAt (lib.splitString "-" pname) 0);
+      in
+      ''
+        substituteInPlace $out/lib/petsc/conf/petscvariables \
+          --replace-fail "${prefix}_INCLUDE =" "${prefix}_INCLUDE = -I${lib.getDev package}/include" \
+          --replace-fail "${prefix}_LIB =" "${prefix}_LIB = -L${lib.getLib package}/lib"
+      ''
+    ) finalAttrs.buildInputs
+  );
+
+  __darwinAllowLocalNetworking = true;
+
   # This is needed as the checks need to compile and link the test cases with
   # -lpetsc, which is not available in the checkPhase, which is executed before
   # the installPhase. The installCheckPhase comes after the installPhase, so
@@ -247,28 +270,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   pythonImportsCheck = [ "petsc4py" ];
 
-  postFixup = lib.concatStringsSep "\n" (
-    map (
-      package:
-      let
-        pname = package.pname or package.name;
-        prefix =
-          if (pname == "blas" || pname == "lapack") then
-            "BLASLAPACK"
-          else
-            lib.toUpper (builtins.elemAt (lib.splitString "-" pname) 0);
-      in
-      ''
-        substituteInPlace $out/lib/petsc/conf/petscvariables \
-          --replace-quiet "${prefix}_INCLUDE =" "${prefix}_INCLUDE = -I${lib.getDev package}/include" \
-          --replace-quiet "${prefix}_LIB =" "${prefix}_LIB = -L${lib.getLib package}/lib"
-      ''
-    ) finalAttrs.buildInputs
-  );
-
   passthru = {
     inherit
-      isILP64
       mpiSupport
       pythonSupport
       fortranSupport
@@ -283,19 +286,14 @@ stdenv.mkDerivation (finalAttrs: {
         serial = petsc.override {
           mpiSupport = false;
         };
-        mpich = petsc.override {
-          mpi = mpich;
-        };
       }
       // lib.optionalAttrs stdenv.hostPlatform.isLinux {
         fullDeps = petsc.override {
           withFullDeps = true;
-          pythonSupport = true;
+          withParmetis = false;
         };
-      }
-      // lib.optionalAttrs stdenv.hostPlatform.isx86_64 {
-        mkl = petsc.override {
-          blasProvider = mkl;
+        mpich = petsc.override {
+          mpi = mpich;
         };
       };
   };

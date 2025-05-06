@@ -9,8 +9,8 @@
 }:
 
 buildPythonPackage rec {
-  version = "2025.04.0";
   pname = "pyadjoint-ad";
+  version = "2025.04.0";
   pyproject = true;
 
   src = fetchFromGitHub {

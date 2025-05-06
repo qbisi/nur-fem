@@ -1,28 +1,37 @@
 {
   lib,
   stdenv,
-  fetchPypi,
   fetchFromGitHub,
   buildPythonPackage,
+
+  # build-system
   scikit-build-core,
-  setuptools,
   nanobind,
+
+  # nativeBuildInputs
   cmake,
   ninja,
   pkg-config,
+
+  # buildInputs
   spdlog,
   pugixml,
   boost,
+
+  # dependency
   numpy,
   cffi,
+  setuptools,
   mpi4py,
   petsc4py,
   slepc4py,
-  fenics-basix,
-  fenics-ffcx,
-  fenics-ufl,
   adios2,
   kahip,
+  fenics-ffcx,
+  fenics-basix,
+  fenics-ufl,
+
+  # nativeCheckInputs
   scipy,
   matplotlib,
   pytest-xdist,
@@ -30,25 +39,20 @@
   writableTmpDirAsHomeHook,
   mpiCheckPhaseHook,
   withParmetis ? false,
-  fenics-dolfinx,
 
   # passthru.tests
+  fenics-dolfinx,
   mpich,
 }:
 assert petsc4py.mpiSupport;
 let
-  mpi4py' = (mpi4py.override { mpi = petsc4py.petscPackages.mpi; });
-  slepc4py' = slepc4py.override {
-    petsc = petsc4py;
-    mpi = petsc4py.petscPackages.mpi;
-  };
-  adios2' = adios2.override {
-    mpi = petsc4py.petscPackages.mpi;
-    hdf5-mpi = petsc4py.petscPackages.hdf5;
-  };
-  kahip' = kahip.override {
-    mpi = petsc4py.petscPackages.mpi;
-  };
+  fenicsPackages = petsc4py.petscPackages.overrideScope (
+    final: prev: {
+      slepc = final.callPackage slepc4py.override { };
+      adios2 = final.callPackage adios2.override { };
+      kahip = final.callPackage kahip.override { };
+    }
+  );
   dolfinx = stdenv.mkDerivation (finalAttrs: {
     version = "0.9.0.post1";
     pname = "dolfinx";
@@ -68,19 +72,19 @@ let
     ];
 
     buildInputs = [
-      adios2'
-      kahip'
       spdlog
       pugixml
       boost
-      petsc4py.petscPackages.mpi
-      petsc4py.petscPackages.scotch
-      petsc4py.petscPackages.hdf5
-      petsc4py
-      slepc4py'
       fenics-basix
       fenics-ffcx
-    ] ++ lib.optional withParmetis petsc4py.petscPackages.parmetis;
+      petsc4py
+      fenicsPackages.mpi
+      fenicsPackages.scotch
+      fenicsPackages.hdf5
+      fenicsPackages.slepc
+      fenicsPackages.kahip
+      fenicsPackages.adios2
+    ] ++ lib.optional withParmetis fenicsPackages.parmetis;
 
     cmakeFlags = [
       (lib.cmakeBool "DOLFINX_ENABLE_ADIOS2" true)
@@ -95,11 +99,12 @@ let
     ];
 
     meta = {
-      homepage = "https://github.com/fenics/dolfinx";
-      description = "Next generation FEniCS problem solving environment";
+      homepage = "https://fenicsproject.org";
+      downloadPage = "https://github.com/fenics/dolfinx";
+      description = "Computational environment of FEniCSx and implements the FEniCS Problem Solving Environment in C++ and Python";
       changelog = "https://github.com/fenics/dolfinx/releases/tag/${finalAttrs.src.tag}";
       license = with lib.licenses; [
-        gpl3Plus
+        bsd2
         lgpl3Plus
       ];
       platforms = lib.platforms.unix;
@@ -116,27 +121,33 @@ buildPythonPackage rec {
   pname = "fenics-dolfinx";
   pyproject = true;
 
-  pythonRelaxDeps = [ "cffi" ];
+  pythonRelaxDeps = [
+    "cffi"
+    "fenics-ufl"
+  ];
 
   preConfigure = "cd python";
+
+  dontUseCmakeConfigure = true;
 
   build-system = [
     scikit-build-core
     nanobind
+  ];
+
+  nativeBuildInputs = [
     cmake
     ninja
     pkg-config
-    petsc4py.petscPackages.mpi
+    fenicsPackages.mpi
   ];
-
-  dontUseCmakeConfigure = true;
 
   buildInputs = [
     dolfinx
     spdlog
     pugixml
     boost
-    petsc4py.petscPackages.hdf5
+    fenicsPackages.hdf5
   ];
 
   dependencies = [
@@ -146,11 +157,11 @@ buildPythonPackage rec {
     fenics-basix
     fenics-ffcx
     fenics-ufl
-    mpi4py'
     petsc4py
-    slepc4py'
-    adios2'
-    kahip'
+    fenicsPackages.slepc
+    fenicsPackages.adios2
+    fenicsPackages.kahip
+    (mpi4py.override { inherit (fenicsPackages) mpi; })
   ];
 
   doCheck = true;
@@ -176,22 +187,19 @@ buildPythonPackage rec {
     # require legacy cffi
     "test_cffi_expression"
     "test_hexahedron_mesh"
-    # might fail with pytest-xdist
-    "interpolation_non_affine_nonmatching_maps"
   ];
 
   passthru = {
-    tests = {
-      complex = fenics-dolfinx.override {
-        petsc4py = petsc4py.override { scalarType = "complex"; };
+    tests =
+      {
+        complex = fenics-dolfinx.override {
+          petsc4py = petsc4py.override { scalarType = "complex"; };
+        };
+      }
+      // lib.optionalAttrs stdenv.hostPlatform.isLinux {
+        mpich = fenics-dolfinx.override {
+          petsc4py = petsc4py.override { mpi = mpich; };
+        };
       };
-      mpich = fenics-dolfinx.override {
-        petsc4py = petsc4py.override { mpi = mpich; };
-      };
-      fullDeps = fenics-dolfinx.override {
-        petsc4py = petsc4py.override { withFullDeps = true; };
-        withParmetis = true;
-      };
-    };
   };
 }

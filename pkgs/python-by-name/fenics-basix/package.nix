@@ -6,7 +6,9 @@
   nanobind,
   cmake,
   ninja,
+  pkg-config,
   blas,
+  lapack,
   numpy,
   sympy,
   scipy,
@@ -17,8 +19,8 @@
 }:
 
 buildPythonPackage rec {
-  version = "0.9.0";
   pname = "fenics-basix";
+  version = "0.9.0";
   pyproject = true;
 
   src = fetchFromGitHub {
@@ -33,14 +35,27 @@ buildPythonPackage rec {
   build-system = [
     scikit-build-core
     nanobind
+  ];
+
+  nativeBuildInputs = [
     cmake
     ninja
+    pkg-config
   ];
 
   dependencies = [
-    blas
     numpy
   ];
+
+  buildInputs = [
+    blas
+    lapack
+  ];
+
+  # Prefer finding BLAS and LAPACK via pkg-config.
+  # Avoid using the Accelerate.framework from the Darwin SDK.
+  # Also, avoid mistaking BLAS for LAPACK.
+  env.CMAKE_ARGS = lib.cmakeBool "BLA_PREFER_PKGCONFIG" true;
 
   pythonImportsCheck = [
     "basix"
@@ -56,8 +71,9 @@ buildPythonPackage rec {
   ];
 
   meta = {
-    homepage = "https://github.com/fenics/basix";
-    description = "FEniCSx finite element basis evaluation library";
+    homepage = "https://fenicsproject.org";
+    downloadPage = "https://github.com/fenics/basix";
+    description = "Finite element definition and tabulation runtime library";
     changelog = "https://github.com/fenics/basix/releases/tag/${src.tag}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ qbisi ];

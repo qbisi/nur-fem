@@ -1,34 +1,35 @@
 {
   lib,
+  pkgs,
   buildPythonPackage,
   fetchFromGitHub,
+  scikit-build-core,
   gfortran,
-  mpi,
   cmake,
   ninja,
+  mpi,
   libspatialindex,
-  scikit-build-core,
   rtree,
 }:
 
 buildPythonPackage rec {
-  pname = "libsupermesh";
-  version = "2025.3.0";
+  inherit (pkgs.libsupermesh)
+    pname
+    version
+    src
+    meta
+    ;
   pyproject = true;
 
-  src = fetchFromGitHub {
-    owner = "firedrakeproject";
-    repo = "libsupermesh";
-    tag = "v${version}";
-    hash = "sha256-RKBi89bUhkbRATaSB8629D+/NeYE3YNDIMEGzSK8z04=";
-  };
-
   build-system = [
+    scikit-build-core
+  ];
+
+  nativeBuildInputs = [
     gfortran
     cmake
     ninja
     mpi
-    scikit-build-core
   ];
 
   dontUseCmakeConfigure = true;
@@ -42,14 +43,6 @@ buildPythonPackage rec {
     rtree
   ];
 
-  # backend scikit-build-core does not run cmake tests
+  # Only build tests if not built by scikit-build-core
   doCheck = false;
-
-  meta = {
-    homepage = "https://github.com/firedrakeproject/libsupermesh";
-    description = "Parallel supermeshing library";
-    changelog = "https://github.com/firedrakeproject/libsupermesh/releases/tag/${src.tag}";
-    license = lib.licenses.lgpl2Plus;
-    maintainers = with lib.maintainers; [ qbisi ];
-  };
 }

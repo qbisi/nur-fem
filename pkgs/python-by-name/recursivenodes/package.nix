@@ -4,13 +4,12 @@
   fetchFromGitLab,
   setuptools,
   numpy,
-  scipy,
   pytestCheckHook,
 }:
 
 buildPythonPackage rec {
-  version = "0.3.0";
   pname = "recursivenodes";
+  version = "0.3.0";
   pyproject = true;
 
   src = fetchFromGitLab {
@@ -24,7 +23,6 @@ buildPythonPackage rec {
 
   dependencies = [
     numpy
-    scipy
   ];
 
   pythonImportsCheck = [ "recursivenodes" ];
@@ -33,6 +31,7 @@ buildPythonPackage rec {
 
   meta = {
     homepage = "https://tisaac.gitlab.io/recursivenodes/";
+    downloadPage = "https://gitlab.com/tisaac/recursivenodes";
     description = "Recursive, parameter-free, explicitly defined interpolation nodes for simplices";
     changelog = "https://gitlab.com/tisaac/recursivenodes/-/releases/${src.tag}";
     license = lib.licenses.mit;

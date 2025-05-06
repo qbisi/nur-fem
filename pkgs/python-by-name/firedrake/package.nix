@@ -14,59 +14,31 @@
   pybind11,
 
   # dependencies
-  siphash24,
-  cachetools,
   decorator,
+  cachetools,
   mpi4py,
+  fenics-ufl,
+  firedrake-fiat,
   h5py,
+  libsupermesh,
+  loopy,
   petsc4py,
   numpy,
   packaging,
   pkgconfig,
   progress,
+  pyadjoint-ad,
   pycparser,
   pytools,
   requests,
   rtree,
   scipy,
   sympy,
-  firedrake-ufl,
-  firedrake-fiat,
-  pyadjoint-ad,
-  firedrake-loopy,
-  libsupermesh,
-
-  # lint
-  flake8,
-  pylint,
-
-  # doc
-  sphinx,
-  sphinx-autobuild,
-  sphinxcontrib-bibtex,
-  # not available in nixpkgs
-  # sphinxcontrib-svg2pdfconverter,
-  sphinxcontrib-jquery,
-  bibtexparser,
-  sphinxcontrib-youtube,
-  numpydoc,
+  islpy,
 
   # tests
-  mpi,
-  ipympl,
-  vtk,
-  # pytest-split,
-  pylit,
-  nbval,
-  pytest,
   mpi-pytest,
-  pytest-xdist,
-  pytest-timeout,
   mpiCheckPhaseHook,
-
-  # passthru.tests
-  mpich,
-  firedrake,
   pytestCheckHook,
 }:
 let
@@ -78,15 +50,15 @@ let
   mpi-pytest' = mpi-pytest.override { mpi4py = mpi4py'; };
 in
 buildPythonPackage rec {
-  version = "0.14-unstable-2025-04-14";
   pname = "firedrake";
+  version = "2025.4.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "firedrakeproject";
     repo = "firedrake";
-    rev = "d3c02bcbf5cca0ff71b3306d7d2796ef6bbf6945";
-    hash = "sha256-2AsymQj6qn9NkI320PIKh/OALV1hl20Dgyi/ij/gK+o=";
+    tag = version;
+    hash = "sha256-nciZ1+bgg9HI4ZyUtVohaoaNmPs33t1tMLbfIvPhj1k=";
   };
 
   postPatch =
@@ -112,74 +84,43 @@ buildPythonPackage rec {
   pythonRelaxDeps = true;
 
   build-system = [
-    writableTmpDirAsHomeHook
-    setuptools
     cython
+    libsupermesh
+    mpi4py
+    numpy
+    pkgconfig
     pybind11
+    setuptools
+    petsc4py
+    rtree
   ];
 
-  buildInputs = [
+  nativeBuildInputs = [
     petsc4py.petscPackages.mpi
   ];
 
   dependencies = [
-    siphash24
     decorator
     cachetools
     mpi4py'
+    fenics-ufl
+    firedrake-fiat
     h5py'
+    libsupermesh
+    loopy
     petsc4py
     numpy
     packaging
     pkgconfig
     progress
+    pyadjoint-ad
     pycparser
     pytools
     requests
     rtree
     scipy
     sympy
-    firedrake-ufl
-    firedrake-fiat
-    pyadjoint-ad
-    firedrake-loopy
-    libsupermesh
-  ];
-
-  optional-dependencies = {
-    dev = [
-      build
-      cython
-      mpi-pytest'
-      pybind11
-      pytest
-      setuptools
-    ];
-
-    test = [
-      vtk
-      pylit
-      nbval
-      pytest
-      mpi-pytest'
-      pytest-xdist
-      pytest-timeout
-      ipympl # needed for notebook testing
-      # pytest-split  # needed for firedrake-run-split-tests
-    ];
-
-    docs = [
-      sphinx
-      sphinx-autobuild
-      sphinxcontrib-bibtex
-      # not available in nixpkgs
-      # sphinxcontrib-svg2pdfconverter
-      sphinxcontrib-jquery
-      bibtexparser
-      sphinxcontrib-youtube
-      numpydoc
-    ];
-  };
+  ] ++ pytools.optional-dependencies.siphash;
 
   postFixup = lib.optionalString stdenv.hostPlatform.isDarwin ''
     install_name_tool -add_rpath ${libsupermesh}/${python.sitePackages}/libsupermesh/lib \
@@ -191,10 +132,11 @@ buildPythonPackage rec {
   pythonImportsCheck = [ "firedrake" ];
 
   nativeCheckInputs = [
-    mpiCheckPhaseHook
+    mpi-pytest'
     pytestCheckHook
-    petsc4py.petscPackages.mpi
-  ] ++ optional-dependencies.test;
+    mpiCheckPhaseHook
+    writableTmpDirAsHomeHook
+  ];
 
   preCheck = ''
     rm -rf firedrake pyop2 tinyasm tsfc
@@ -209,28 +151,11 @@ buildPythonPackage rec {
     runHook postCheck
   '';
 
-  passthru.tests = {
-    fullCheck = firedrake.overrideAttrs (oldAttrs: {
-      # PYOP2_CFLAGS is used to pass some badly written example tests
-      env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
-      pytestFlagsArray = [
-        "-n"
-        "auto"
-        "tests"
-      ];
-      disabledTests = [
-        "test_dat_illegal_name"
-        "test_dat_illegal_set"
-      ];
-      installCheckPhase = "pytestCheckPhase";
-    });
-    mpich = firedrake.override { petsc4py = petsc4py.override { mpi = mpich; }; };
-  };
-
   meta = {
-    homepage = "http://www.firedrakeproject.org";
+    homepage = "https://www.firedrakeproject.org";
+    downloadPage = "https://github.com/firedrakeproject/firedrake";
     description = "Automated system for the portable solution of partial differential equations using the finite element method (FEM)";
-    license = lib.licenses.lgpl3;
+    license = lib.licenses.lgpl3Plus;
     maintainers = with lib.maintainers; [ qbisi ];
   };
 }

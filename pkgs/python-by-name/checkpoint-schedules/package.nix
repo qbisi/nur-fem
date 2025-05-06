@@ -1,15 +1,15 @@
 {
   lib,
-  fetchFromGitHub,
   buildPythonPackage,
+  fetchFromGitHub,
   setuptools,
   numpy,
   pytestCheckHook,
 }:
 
 buildPythonPackage rec {
-  version = "1.0.4";
   pname = "checkpoint-schedules";
+  version = "1.0.4";
   pyproject = true;
 
   src = fetchFromGitHub {
@@ -32,10 +32,11 @@ buildPythonPackage rec {
   nativeCheckInputs = [ pytestCheckHook ];
 
   meta = {
-    homepage = "https://github.com/firedrakeproject/checkpoint_schedules";
-    description = "Provides schedules for step-based incremental checkpointing of the adjoints to computer models";
+    homepage = "https://www.firedrakeproject.org/checkpoint_schedules";
+    downloadPage = "https://github.com/firedrakeproject/checkpoint_schedules";
+    description = "Schedules for incremental checkpointing of adjoint simulations";
     changelog = "https://github.com/firedrakeproject/checkpoint_schedules/releases/tag/${src.tag}";
-    license = lib.licenses.lgpl3;
+    license = lib.licenses.lgpl3Only;
     maintainers = with lib.maintainers; [ qbisi ];
   };
 }

@@ -10,14 +10,12 @@
   fenics-basix,
   sympy,
   numba,
-  pygraphviz,
-  pytest-xdist,
   pytestCheckHook,
 }:
 
 buildPythonPackage rec {
-  version = "0.9.0";
   pname = "fenics-ffcx";
+  version = "0.9.0";
   pyproject = true;
 
   src = fetchFromGitHub {
@@ -27,6 +25,10 @@ buildPythonPackage rec {
     hash = "sha256-eAV//RLbrxyhqgbZ2DiR7qML7xfgPn0/Seh+2no0x8w=";
   };
 
+  pythonRelaxDeps = [
+    "fenics-ufl"
+  ];
+
   build-system = [
     setuptools
   ];
@@ -34,6 +36,7 @@ buildPythonPackage rec {
   dependencies = [
     numpy
     cffi
+    setuptools
     fenics-ufl
     fenics-basix
   ];
@@ -49,20 +52,19 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     sympy
     numba
-    pygraphviz
-    pytest-xdist
     pytestCheckHook
   ];
 
   env.NIX_CFLAGS_COMPILE = lib.optionalString stdenv.hostPlatform.isDarwin "-Wno-error=unused-command-line-argument";
 
   meta = {
-    homepage = "https://github.com/fenics/ffcx";
-    description = "Next generation FEniCS Form Compiler for finite element forms";
+    homepage = "https://fenicsproject.org";
+    downloadPage = "https://github.com/fenics/ffcx";
+    description = "FEniCSx Form Compiler";
     changelog = "https://github.com/fenics/ffcx/releases/tag/${src.tag}";
     mainProgram = "ffcx";
     license = with lib.licenses; [
-      gpl3Plus
+      unlicense
       lgpl3Plus
     ];
     maintainers = with lib.maintainers; [ qbisi ];

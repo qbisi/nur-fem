@@ -2,26 +2,24 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  wheel,
   setuptools,
   numpy,
   pytestCheckHook,
 }:
 
 buildPythonPackage rec {
-  version = "2024.2.0";
   pname = "fenics-ufl";
+  version = "2025.1.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "fenics";
     repo = "ufl";
     tag = version;
-    hash = "sha256-YKLTXkN9cIKR545/JRN7zA7dNoVZEVIyO+JaL1V5ajU=";
+    hash = "sha256-4WKUtW6cLvgazyjp1vpDWZa54QeCbbP3LE1C3dv5QFc=";
   };
 
   build-system = [
-    wheel
     setuptools
   ];
 
@@ -41,19 +39,11 @@ buildPythonPackage rec {
   nativeCheckInputs = [ pytestCheckHook ];
 
   meta = {
-    homepage = "https://github.com/fenics/ufl";
+    homepage = "https://fenicsproject.org";
+    downloadPage = "https://github.com/fenics/ufl";
     description = "Unified Form Language";
-    longDescription = ''
-      The Unified Form Language (UFL) is a domain specific language for declaration
-      of finite element discretizations of variational forms. More precisely, it
-      defines a flexible interface for choosing finite element spaces and defining
-      expressions for weak forms in a notation close to mathematical notation.
-    '';
     changelog = "https://github.com/fenics/ufl/releases/tag/${src.tag}";
-    license = with lib.licenses; [
-      gpl3Plus
-      lgpl3Plus
-    ];
+    license = lib.licenses.lgpl3Plus;
     maintainers = with lib.maintainers; [ qbisi ];
   };
 }
