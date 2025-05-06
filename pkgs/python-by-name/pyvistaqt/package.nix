@@ -2,16 +2,10 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
+  setuptools,
   setuptools-scm,
   qtpy,
-  pyqt6,
   pyvista,
-  vtk,
-  numpy,
-  pytest-qt,
-  pytest-cov,
-  pytestCheckHook,
-  writableTmpDirAsHomeHook,
 }:
 
 buildPythonPackage rec {
@@ -25,37 +19,25 @@ buildPythonPackage rec {
     hash = "sha256-B8NyJVEYzqUAG2zi/YuowpRhbHUNprPA0F6Uh2hYsF0=";
   };
 
-  postPatch = ''
-    substituteInPlace tests/conftest.py \
-      --replace-fail "pytest.skip(NO_PLOTTING, " "pytest.skip("
-  '';
-
   build-system = [
+    setuptools
     setuptools-scm
   ];
 
   dependencies = [
     qtpy
-    pyqt6
     pyvista
   ];
 
   pythonImportsCheck = [ "pyvistaqt" ];
 
   # Qt related tests cannot run in sandbox
+  # Fatal Python error: Aborted
   doCheck = false;
-
-  nativeCheckInputs = [
-    vtk
-    numpy
-    pytest-qt
-    pytest-cov
-    pytestCheckHook
-    writableTmpDirAsHomeHook
-  ];
 
   meta = {
     homepage = "http://qtdocs.pyvista.org/";
+    downloadPage = "https://github.com/pyvista/pyvistaqt";
     description = "Helper module for pyvista";
     changelog = "https://github.com/pyvista/pyvistaqt/releases/tag/${src.tag}";
     license = lib.licenses.mit;
