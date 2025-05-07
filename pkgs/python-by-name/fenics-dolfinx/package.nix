@@ -1,6 +1,7 @@
 {
   lib,
   stdenv,
+  toPythonModule,
   fetchFromGitHub,
   buildPythonPackage,
 
@@ -48,9 +49,9 @@ assert petsc4py.mpiSupport;
 let
   fenicsPackages = petsc4py.petscPackages.overrideScope (
     final: prev: {
-      slepc = final.callPackage slepc4py.override { };
-      adios2 = final.callPackage adios2.override { };
-      kahip = final.callPackage kahip.override { };
+      slepc = toPythonModule (final.callPackage slepc4py.override { });
+      adios2 = toPythonModule (final.callPackage adios2.override { });
+      kahip = toPythonModule (final.callPackage kahip.override { });
     }
   );
   dolfinx = stdenv.mkDerivation (finalAttrs: {
