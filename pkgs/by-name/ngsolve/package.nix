@@ -37,9 +37,6 @@ let
     ++ lib.optional avx2Support "-mavx2"
     ++ lib.optional avx512Support "-mavx512"
     ++ lib.optional advSimdSupport "-march=armv8.3-a+simd"
-    # disalbe some compiler warning for aarch64 specified target
-    # https://gcc.gnu.org/gcc-10/changes.html
-    # ++ lib.optional (stdenv.hostPlatform.isAarch64 && stdenv.hostPlatform.isLinux) "-Wno-psabi"
   );
   wrapPythonPath = "$out/${python3Packages.python.sitePackages}:${
     python3Packages.makePythonPath (
@@ -77,6 +74,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     substituteInPlace cmake/generate_version_file.cmake \
       --replace-fail "Git REQUIRED" "Git"
+
     echo "v${finalAttrs.version}-0" > version.txt
 
     echo -e "add_custom_target(project_catch)" > cmake/external_projects/catch.cmake

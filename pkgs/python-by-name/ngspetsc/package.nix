@@ -26,11 +26,9 @@ buildPythonPackage rec {
 
   # netgen-mesher has been built with opencascade-occt support
   # thus we do not need netgen-occt
-  postPatch = ''
-    substituteInPlace pyproject.toml \
-      --replace-fail 'netgen-occt' '#netgen-occt' \
-      --replace-fail 'project.optional-dependencies' 'tool.poetry.extras'
-  '';
+  pythonRemoveDeps = [
+    "netgen-occt"
+  ];
 
   build-system = [
     poetry-core

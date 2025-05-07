@@ -73,15 +73,24 @@ stdenv.mkDerivation (finalAttrs: {
 
   # when generating python stub file utilizing system python pybind11_stubgen module
   # cmake need to inherit pythonpath
-  postPatch = ''
-    substituteInPlace python/CMakeLists.txt \
-      --replace-fail ''\'''${CMAKE_INSTALL_PREFIX}/''${NG_INSTALL_DIR_PYTHON}' \
-                     ''\'''${CMAKE_INSTALL_PREFIX}/''${NG_INSTALL_DIR_PYTHON}:$ENV{PYTHONPATH}'
+  postPatch =
+    ''
+      substituteInPlace python/CMakeLists.txt \
+        --replace-fail ''\'''${CMAKE_INSTALL_PREFIX}/''${NG_INSTALL_DIR_PYTHON}' \
+                       ''\'''${CMAKE_INSTALL_PREFIX}/''${NG_INSTALL_DIR_PYTHON}:$ENV{PYTHONPATH}'
 
-    substituteInPlace ng/ng.tcl ng/onetcl.cpp \
-      --replace-fail "libnggui" "$out/lib/libnggui" \
-      --replace-fail "{dir}/ngsolve.tcl" "{dir}/../libexec/ngsolve.tcl"
-  '';
+      substituteInPlace ng/ng.tcl ng/onetcl.cpp \
+        --replace-fail "libnggui" "$out/lib/libnggui"
+        --replace-fail "{dir}/ngsolve.tcl" "{dir}/../libexec/ngsolve.tcl"
+
+      substituteInPlace ng/Togl2.1/CMakeLists.txt \
+        --replace-fail "/usr/bin/gcc" "$CC"
+    ''
+    + lib.optionalString (!stdenv.hostPlatform.isx86_64) ''
+      # mesh generation differs on x86_64 and aarch64 platform
+      # test_tutorials will fail on aarch64 platform
+      rm tests/pytest/test_tutorials.py
+    '';
 
   nativeBuildInputs = [
     cmake
@@ -109,7 +118,16 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   cmakeFlags = [
-    (lib.cmakeFeature "NETGEN_VERSION_GIT" "v${finalAttrs.version}-0")
+    # On Darwin platform, the patch version(2501) should not be greater than 255
+    (lib.cmakeFeature "NETGEN_VERSION_GIT" "v${
+      if stdenv.hostPlatform.isDarwin then "6.2.0" else finalAttrs.version
+    }-0")
+    (lib.cmakeFeature "NG_INSTALL_DIR_BIN" "bin")
+    (lib.cmakeFeature "NG_INSTALL_DIR_LIB" "lib")
+    (lib.cmakeFeature "NG_INSTALL_DIR_CMAKE" "lib/cmake/${finalAttrs.pname}")
+    (lib.cmakeFeature "NG_INSTALL_DIR_PYTHON" python3Packages.python.sitePackages)
+    (lib.cmakeFeature "NG_INSTALL_DIR_RES" "share")
+    (lib.cmakeFeature "NG_INSTALL_DIR_INCLUDE" "include")
     (lib.cmakeFeature "CMAKE_CXX_FLAGS" archFlags)
     (lib.cmakeBool "USE_MPI" true)
     (lib.cmakeBool "USE_MPI4PY" true)
@@ -123,9 +141,9 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "ENABLE_UNIT_TESTS" finalAttrs.finalPackage.doInstallCheck)
   ];
 
-  # mesh generation differs on x86_64 and aarch64 platform
-  # tests will fail on aarch64 platform
-  doInstallCheck = stdenv.hostPlatform.isx86_64;
+  __darwinAllowLocalNetworking = true;
+
+  doInstallCheck = true;
 
   preInstallCheck = ''
     export PYTHONPATH=$out/${python3Packages.python.sitePackages}:$PYTHONPATH
@@ -159,10 +177,7 @@ stdenv.mkDerivation (finalAttrs: {
       boost
       publicDomain
     ];
-    platforms = [
-      "x86_64-linux"
-      "aarch64-linux"
-    ];
+    platforms = lib.platforms.unix;
     mainProgram = "netgen";
     maintainers = with lib.maintainers; [ qbisi ];
   };
