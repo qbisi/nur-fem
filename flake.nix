@@ -97,6 +97,10 @@
               path = ./templates/fenics;
               description = "fenics template";
             };
+            ngsolve = {
+              path = ./templates/ngsolve;
+              description = "ngsolve template";
+            };
           };
 
           nixosModules.default = {
