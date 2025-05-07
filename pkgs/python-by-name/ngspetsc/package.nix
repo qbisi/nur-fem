@@ -30,6 +30,11 @@ buildPythonPackage rec {
     "netgen-occt"
   ];
 
+  postPatch = ''
+    substituteInPlace pyproject.toml \
+      --replace-fail 'project.optional-dependencies' 'tool.poetry.extras'
+  '';
+
   build-system = [
     poetry-core
   ];
@@ -50,8 +55,9 @@ buildPythonPackage rec {
   ];
 
   meta = {
-    description = "Interface between PETSc and NGSolve/NETGEN";
     homepage = "https://ngspetsc.readthedocs.io/en/latest/";
+    downloadPage = "https://github.com/NGSolve/ngsPETSc";
+    description = "Interface between PETSc and NGSolve/NETGEN";
     changelog = "https://github.com/NGSolve/ngsPETSc/releases/tag/${src.tag}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ qbisi ];
