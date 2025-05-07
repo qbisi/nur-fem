@@ -49,9 +49,9 @@ assert petsc4py.mpiSupport;
 let
   fenicsPackages = petsc4py.petscPackages.overrideScope (
     final: prev: {
-      slepc = toPythonModule (final.callPackage slepc4py.override { });
-      adios2 = toPythonModule (final.callPackage adios2.override { });
-      kahip = toPythonModule (final.callPackage kahip.override { });
+      slepc = final.callPackage slepc4py.override { };
+      adios2 = final.callPackage adios2.override { };
+      kahip = final.callPackage kahip.override { };
     }
   );
   dolfinx = stdenv.mkDerivation (finalAttrs: {
@@ -159,9 +159,9 @@ buildPythonPackage rec {
     fenics-ffcx
     fenics-ufl
     petsc4py
-    fenicsPackages.slepc
-    fenicsPackages.adios2
-    fenicsPackages.kahip
+    (toPythonModule fenicsPackages.slepc)
+    (toPythonModule fenicsPackages.adios2)
+    (toPythonModule fenicsPackages.kahip)
     (mpi4py.override { inherit (fenicsPackages) mpi; })
   ];
 
