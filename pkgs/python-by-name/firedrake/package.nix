@@ -176,6 +176,8 @@ buildPythonPackage rec {
         ;
       format = "other";
 
+      __darwinAllowLocalNetworking = true;
+
       dontBuild = true;
       dontInstall = true;
 
