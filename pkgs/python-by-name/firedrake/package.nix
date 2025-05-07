@@ -7,7 +7,6 @@
   python,
 
   # build-system
-  writableTmpDirAsHomeHook,
   build,
   setuptools,
   cython,
@@ -37,8 +36,18 @@
   islpy,
 
   # tests
+  pytest,
   mpi-pytest,
   mpiCheckPhaseHook,
+  writableTmpDirAsHomeHook,
+
+  # passthru.tests
+  firedrake,
+  vtk,
+  pylit,
+  nbval,
+  ipympl,
+  pytest-xdist,
   pytestCheckHook,
 }:
 let
@@ -101,28 +110,31 @@ buildPythonPackage rec {
     petsc4py.petscPackages.mpi
   ];
 
-  dependencies = [
-    decorator
-    cachetools
-    mpi4py'
-    fenics-ufl
-    firedrake-fiat
-    h5py'
-    libsupermesh
-    loopy
-    petsc4py
-    numpy
-    packaging
-    pkgconfig
-    progress
-    pyadjoint-ad
-    pycparser
-    pytools
-    requests
-    rtree
-    scipy
-    sympy
-  ] ++ pytools.optional-dependencies.siphash;
+  dependencies =
+    [
+      decorator
+      cachetools
+      mpi4py'
+      fenics-ufl
+      firedrake-fiat
+      h5py'
+      libsupermesh
+      loopy
+      petsc4py
+      numpy
+      packaging
+      pkgconfig
+      progress
+      pyadjoint-ad
+      pycparser
+      pytools
+      requests
+      rtree
+      scipy
+      sympy
+    ]
+    ++ pytools.optional-dependencies.siphash
+    ++ lib.optional stdenv.hostPlatform.isDarwin islpy;
 
   postFixup = lib.optionalString stdenv.hostPlatform.isDarwin ''
     install_name_tool -add_rpath ${libsupermesh}/${python.sitePackages}/libsupermesh/lib \
@@ -134,8 +146,8 @@ buildPythonPackage rec {
   pythonImportsCheck = [ "firedrake" ];
 
   nativeCheckInputs = [
+    pytest
     mpi-pytest'
-    pytestCheckHook
     mpiCheckPhaseHook
     writableTmpDirAsHomeHook
   ];
@@ -152,6 +164,48 @@ buildPythonPackage rec {
 
     runHook postCheck
   '';
+
+  passthru.tests = {
+    fullCheck = buildPythonPackage {
+      pname = "${pname}-fullCheck";
+      inherit
+        src
+        version
+        postPatch
+        preCheck
+        ;
+      format = "other";
+
+      dontBuild = true;
+      dontInstall = true;
+
+      nativeCheckInputs = [
+        firedrake
+        vtk
+        pylit
+        nbval
+        ipympl
+        pytest-xdist
+        mpi-pytest'
+        pytestCheckHook
+        mpiCheckPhaseHook
+        writableTmpDirAsHomeHook
+      ];
+
+      # PYOP2_CFLAGS is used to compile some legacy c code in tests kernel.
+      env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
+
+      pytestFlagsArray = [
+        "tests"
+      ];
+
+      disabledTests = [
+        # require decorator<=4.4.2
+        "test_dat_illegal_name"
+        "test_dat_illegal_set"
+      ];
+    };
+  };
 
   meta = {
     homepage = "https://www.firedrakeproject.org";

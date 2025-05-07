@@ -27,7 +27,7 @@ buildPythonPackage rec {
   meta = {
     homepage = "https://codeberg.org/milde/pylit";
     description = "Bidirectional text/code converter";
-    changelog = "https://codeberg.org/milde/pylit/releases/tag/${src.tag}";
+    mainProgram = "pylit";
     license = lib.licenses.gpl3Plus;
     maintainers = with lib.maintainers; [ qbisi ];
   };
