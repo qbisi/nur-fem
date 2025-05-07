@@ -44,7 +44,7 @@ let
     python3Packages.scipy
     (python3Packages.toPythonModule netgen)
   ];
-  wrapPythonPath = "$out/${python3Packages.python.sitePackages}:${python3Packages.makePythonPath dependcies}";
+  wrapPythonPath = "${placeholder "out"}/${python3Packages.python.sitePackages}:${python3Packages.makePythonPath dependcies}";
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "ngsolve";
@@ -60,9 +60,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     # Add neccessary python path for standalone gui app netgen.
-    (replaceVars ./tcl-script-add-python-path.patch {
-      WRAP_PYTHONPATH = wrapPythonPath;
-    })
+    ./tcl-script-add-python-path.patch
     # looks for a shared mumps library
     ./fix-find-mumps.patch
 
@@ -91,6 +89,9 @@ stdenv.mkDerivation (finalAttrs: {
 
       substituteInPlace CMakeLists.txt \
         --replace-fail "set(NGS_TEST_TIMEOUT 60)" "set(NGS_TEST_TIMEOUT 300)"
+
+      substituteInPlace ngsolve.tcl \
+        --replace-fail "@WRAP_PYTHONPATH@" "${wrapPythonPath}"
     ''
     + lib.optionalString stdenv.hostPlatform.isDarwin ''
       substituteInPlace comp/CMakeLists.txt --replace-fail \
