@@ -1,0 +1,27 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index efa206a79..e52c0c22e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -459,18 +459,18 @@ if(APPLE)
+         set( ngsld_flags "-isysroot ${CMAKE_OSX_SYSROOT} ${ngsld_flags}" )
+     endif()
+     #   set(ngscxx_flags "${ngscxx_flags} -Qunused-arguments")
+-    set(ngscxx_includes "${ngscxx_includes} -I$Netgen_BUNDLE/Contents/Resources/include" )  
+-    set(ngsld_flags "${ngsld_flags} -L$Netgen_BUNDLE/Contents/MacOS  -undefined dynamic_lookup" )
++    set(ngscxx_includes "${ngscxx_includes} -I$Netgen_BUNDLE/include" )  
++    set(ngsld_flags "${ngsld_flags} -L$Netgen_BUNDLE/lib  -undefined dynamic_lookup" )
+     set(ngscxx_header "\
+ #!${BASH}
+ ${ngscxx_set_script_dir}
+-Netgen_BUNDLE=\"`echo \"$0\" | sed -e 's/\\/Contents\\/MacOS\\/ngscxx//'`\"
++Netgen_BUNDLE=\"`echo \"$0\" | sed -e 's/\\/bin\\/ngscxx//'`\"
+ Netgen_MACOS=\"$Netgen_BUNDLE/Contents/MacOS\"
+ ")
+     set(ngsld_header "\
+ #!${BASH}
+ ${ngscxx_set_script_dir}
+-Netgen_BUNDLE=\"`echo \"$0\" | sed -e 's/\\/Contents\\/MacOS\\/ngsld//'`\"
++Netgen_BUNDLE=\"`echo \"$0\" | sed -e 's/\\/bin\\/ngsld//'`\"
+ Netgen_MACOS=\"$Netgen_BUNDLE/Contents/MacOS\"
+ ")
+ file(RELATIVE_PATH BIN_TO_LIB_RELPATH ${NETGEN_BINARY_DIR} ${NETGEN_LIBRARY_DIR})
