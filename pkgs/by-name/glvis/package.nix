@@ -3,6 +3,7 @@
   stdenv,
   fetchFromGitHub,
   cmake,
+  ninja,
   tinyxxd,
   mfem,
   glm,
@@ -26,6 +27,14 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-1wAo/1p2guemzaoqVo9lNTiAHFC2X10Xj3Xw7Xwt1Kg=";
   };
 
+  postPatch = ''
+    substituteInPlace CMakeLists.txt --replace-fail "fixup_bundle" "#fixup_bundle"
+  '';
+
+  postBuild = lib.optionals stdenv.hostPlatform.isDarwin ''
+    make app
+  '';
+
   nativeBuildInputs = [
     glm
     cmake
@@ -48,15 +57,13 @@ stdenv.mkDerivation (finalAttrs: {
       llvmPackages.openmp
     ];
 
-  cmakeFlags = [
-  ];
-
   meta = {
+    homepage = "https://glvis.org";
+    downloadPage = "https://github.com/glvis/glvis";
     description = "Lightweight tool for accurate and flexible finite element visualization";
-    homepage = "http://glvis.org";
+    mainProgram = "glvis";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ qbisi ];
-    broken = stdenv.hostPlatform.isDarwin;
     platforms = lib.platforms.unix;
   };
 })
