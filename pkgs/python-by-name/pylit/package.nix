@@ -3,6 +3,7 @@
   buildPythonPackage,
   fetchFromGitea,
   flit-core,
+  pytestCheckHook,
 }:
 
 buildPythonPackage rec {
@@ -18,11 +19,24 @@ buildPythonPackage rec {
     hash = "sha256-kXiWRRccv3ZI0v6efJRLYJ2Swx60W3QUtM1AEF6IMpo=";
   };
 
+  # replace legacy nose module with pytest
+  postPatch = ''
+    substituteInPlace test/{pylit,pylit_ui}_test.py \
+      --replace-fail "import nose" "import pytest" \
+      --replace-fail "nose.runmodule()" "pytest.main()"
+  '';
+
   build-system = [
     flit-core
   ];
 
   pythonImportsCheck = [ "pylit" ];
+
+  nativeCheckInputs = [
+    pytestCheckHook
+  ];
+
+  pytestFlagsArray = [ "test" ];
 
   meta = {
     homepage = "https://codeberg.org/milde/pylit";
