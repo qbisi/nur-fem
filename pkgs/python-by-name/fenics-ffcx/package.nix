@@ -11,6 +11,7 @@
   sympy,
   numba,
   pytestCheckHook,
+  addBinToPathHook,
 }:
 
 buildPythonPackage rec {
@@ -45,17 +46,14 @@ buildPythonPackage rec {
     "ffcx"
   ];
 
-  preCheck = ''
-    export PATH=$out/bin:$PATH
-  '';
-
   nativeCheckInputs = [
     sympy
     numba
     pytestCheckHook
+    addBinToPathHook
   ];
 
-  env.NIX_CFLAGS_COMPILE = lib.optionalString stdenv.hostPlatform.isDarwin "-Wno-error=unused-command-line-argument";
+  env.NIX_CFLAGS_COMPILE = lib.optionalString stdenv.cc.isClang "-Wno-error=unused-command-line-argument";
 
   meta = {
     homepage = "https://fenicsproject.org";
