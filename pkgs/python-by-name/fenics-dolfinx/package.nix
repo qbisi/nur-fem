@@ -18,6 +18,7 @@
   spdlog,
   pugixml,
   boost,
+  dolfinx,
 
   # dependency
   numpy,
@@ -39,85 +40,29 @@
   pytestCheckHook,
   writableTmpDirAsHomeHook,
   mpiCheckPhaseHook,
+
+  # custom options
   withParmetis ? false,
 
   # passthru.tests
   fenics-dolfinx,
   mpich,
 }:
-assert petsc4py.mpiSupport;
+
 let
   fenicsPackages = petsc4py.petscPackages.overrideScope (
     final: prev: {
       slepc = final.callPackage slepc4py.override { };
       adios2 = final.callPackage adios2.override { };
       kahip = final.callPackage kahip.override { };
+      dolfinx = final.callPackage dolfinx.override { inherit withParmetis; };
     }
   );
-  dolfinx = stdenv.mkDerivation (finalAttrs: {
-    version = "0.9.0.post1";
-    pname = "dolfinx";
-
-    src = fetchFromGitHub {
-      owner = "fenics";
-      repo = "dolfinx";
-      tag = "v${finalAttrs.version}";
-      hash = "sha256-4IIx7vUZeDwOGVdyC2PBvfhVjrmGZeVQKAwgDYScbY0=";
-    };
-
-    preConfigure = "cd cpp";
-
-    nativeBuildInputs = [
-      cmake
-      pkg-config
-    ];
-
-    buildInputs = [
-      spdlog
-      pugixml
-      boost
-      fenics-basix
-      fenics-ffcx
-      petsc4py
-      fenicsPackages.mpi
-      fenicsPackages.scotch
-      fenicsPackages.hdf5
-      fenicsPackages.slepc
-      fenicsPackages.kahip
-      fenicsPackages.adios2
-    ] ++ lib.optional withParmetis fenicsPackages.parmetis;
-
-    cmakeFlags = [
-      (lib.cmakeBool "DOLFINX_ENABLE_ADIOS2" true)
-      (lib.cmakeBool "DOLFINX_ENABLE_PETSC" true)
-      (lib.cmakeBool "DOLFIN_ENABLE_PARMETIS" withParmetis)
-      (lib.cmakeBool "DOLFINX_ENABLE_SCOTCH" true)
-      (lib.cmakeBool "DOLFINX_ENABLE_SLEPC" true)
-      (lib.cmakeBool "DOLFINX_ENABLE_KAHIP" true)
-      (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
-      (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
-      (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
-    ];
-
-    meta = {
-      homepage = "https://fenicsproject.org";
-      downloadPage = "https://github.com/fenics/dolfinx";
-      description = "Computational environment of FEniCSx and implements the FEniCS Problem Solving Environment in C++ and Python";
-      changelog = "https://github.com/fenics/dolfinx/releases/tag/${finalAttrs.src.tag}";
-      license = with lib.licenses; [
-        bsd2
-        lgpl3Plus
-      ];
-      platforms = lib.platforms.unix;
-      maintainers = with lib.maintainers; [ qbisi ];
-    };
-  });
 in
 buildPythonPackage rec {
   inherit (dolfinx)
     version
     src
-    meta
     ;
   pname = "fenics-dolfinx";
   pyproject = true;
@@ -127,7 +72,9 @@ buildPythonPackage rec {
     "fenics-ufl"
   ];
 
-  preConfigure = "cd python";
+  preConfigure = ''
+    cd python
+  '';
 
   dontUseCmakeConfigure = true;
 
@@ -144,11 +91,11 @@ buildPythonPackage rec {
   ];
 
   buildInputs = [
-    dolfinx
     spdlog
     pugixml
     boost
     fenicsPackages.hdf5
+    fenicsPackages.dolfinx
   ];
 
   dependencies = [
@@ -185,7 +132,7 @@ buildPythonPackage rec {
   ];
 
   disabledTests = [
-    # require legacy cffi
+    # require cffi<1.17
     "test_cffi_expression"
     "test_hexahedron_mesh"
   ];
@@ -202,5 +149,18 @@ buildPythonPackage rec {
           petsc4py = petsc4py.override { mpi = mpich; };
         };
       };
+  };
+
+  meta = {
+    homepage = "https://fenicsproject.org";
+    downloadPage = "https://github.com/fenics/dolfinx";
+    description = "Computational environment of FEniCSx and implements the FEniCS Problem Solving Environment in C++ and Python";
+    changelog = "https://github.com/fenics/dolfinx/releases/tag/${src.tag}";
+    license = with lib.licenses; [
+      bsd2
+      lgpl3Plus
+    ];
+    platforms = lib.platforms.unix;
+    maintainers = with lib.maintainers; [ qbisi ];
   };
 }
