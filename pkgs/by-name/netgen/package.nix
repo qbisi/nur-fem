@@ -140,6 +140,15 @@ stdenv.mkDerivation (finalAttrs: {
 
   __darwinAllowLocalNetworking = true;
 
+  postInstall = lib.optionalString stdenv.hostPlatform.isDarwin ''
+    rm $out/bin/{Netgen1,startup.sh}
+    mkdir -p $out/Applications/${finalAttrs.pname}.app/Contents/{MacOS,Resouces}
+    substituteInPlace $out/Info.plist --replace-fail "Netgen1" "netgen"
+    mv $out/Info.plist $out/Applications/${finalAttrs.pname}.app/Contents
+    mv $out/Netgen.icns $out/Applications/${finalAttrs.pname}.app/Contents/Resouces
+    ln -s $out/bin/netgen $out/Applications/${finalAttrs.pname}.app/Contents/MacOS/netgen
+  '';
+
   doInstallCheck = true;
 
   preInstallCheck = ''
