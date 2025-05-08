@@ -15,15 +15,11 @@
   pkg-config,
 
   # buildInputs
-  spdlog,
-  pugixml,
-  boost,
   dolfinx,
 
   # dependency
   numpy,
   cffi,
-  setuptools,
   mpi4py,
   petsc4py,
   slepc4py,
@@ -91,24 +87,19 @@ buildPythonPackage rec {
   ];
 
   buildInputs = [
-    spdlog
-    pugixml
-    boost
-    fenicsPackages.hdf5
     fenicsPackages.dolfinx
   ];
 
   dependencies = [
     numpy
     cffi
-    setuptools
     fenics-basix
     fenics-ffcx
     fenics-ufl
     petsc4py
-    (toPythonModule fenicsPackages.slepc)
-    (toPythonModule fenicsPackages.adios2)
-    (toPythonModule fenicsPackages.kahip)
+    fenicsPackages.slepc
+    fenicsPackages.adios2
+    fenicsPackages.kahip
     (mpi4py.override { inherit (fenicsPackages) mpi; })
   ];
 
