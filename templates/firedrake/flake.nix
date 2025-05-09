@@ -45,7 +45,6 @@
                   petsc = prev.petsc.override {
                     # custom petsc configuration
                     # mpi = prev.mpich;
-                    # blasProvider = prev.mkl;
                     # scalarType = "complex";
                     # withFullDeps = true;
                     # debug = false;

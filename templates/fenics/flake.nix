@@ -44,7 +44,6 @@
                 (final: prev: {
                   petsc = prev.petsc.override {
                     # mpi = prev.mpich;
-                    # blasProvider = prev.mkl;
                     # scalarType = "complex";
                     # withFullDeps = true;
                     # debug = false;
