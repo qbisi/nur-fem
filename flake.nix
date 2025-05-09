@@ -1,15 +1,15 @@
 {
-  # nixConfig = {
-  #   extra-substituters = [
-  #     "https://attic.csrc.eu.org/nur-fem"
-  #   ];
-  #   extra-trusted-public-keys = [
-  #     "nur-fem:YgFZCrwgfs9krm3KuUbDpsJ/Q7cIF6IcRH3H06b4uD0="
-  #   ];
-  # };
+  nixConfig = {
+    extra-substituters = [
+      "https://attic.csrc.eu.org/nur-fem"
+    ];
+    extra-trusted-public-keys = [
+      "nur-fem:YgFZCrwgfs9krm3KuUbDpsJ/Q7cIF6IcRH3H06b4uD0="
+    ];
+  };
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/master";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";

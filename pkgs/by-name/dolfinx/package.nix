@@ -94,7 +94,7 @@ stdenv.mkDerivation (finalAttrs: {
       doCheck = true;
 
       installPhase = ''
-        install -D unittests $out/bin/unittests
+        touch $out
       '';
     };
   };
