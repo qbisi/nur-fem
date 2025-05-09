@@ -6,6 +6,7 @@
   libicns,
   imagemagick,
   makeDesktopItem,
+  copyDesktopItems,
   cmake,
   python3Packages,
   mpi,
@@ -100,7 +101,7 @@ stdenv.mkDerivation (finalAttrs: {
     imagemagick
     cmake
     python3Packages.pybind11-stubgen
-  ];
+  ] ++ lib.optional stdenv.hostPlatform.isLinux copyDesktopItems;
 
   buildInputs = [
     metis
@@ -145,18 +146,19 @@ stdenv.mkDerivation (finalAttrs: {
 
   __darwinAllowLocalNetworking = true;
 
+  desktopItems = [
+    (makeDesktopItem {
+      name = "netgen";
+      exec = "netgen";
+      comment = finalAttrs.meta.description;
+      desktopName = "Netgen Mesh Generator";
+      genericName = "3D Mesh Generator";
+      categories = [ "Science" ];
+      icon = "netgen";
+    })
+  ];
+
   postInstall =
-    let
-      desktopItem = makeDesktopItem {
-        name = "netgen";
-        exec = "netgen";
-        comment = finalAttrs.meta.description;
-        desktopName = "Netgen Mesh Generator";
-        genericName = "3D Mesh Generator";
-        categories = [ "Science" ];
-        icon = "netgen";
-      };
-    in
     lib.optionalString stdenv.hostPlatform.isDarwin ''
       rm $out/bin/{Netgen1,startup.sh}
       mkdir -p $out/Applications/${finalAttrs.pname}.app/Contents/{MacOS,Resouces}
@@ -178,10 +180,6 @@ stdenv.mkDerivation (finalAttrs: {
           convert -resize "$size"x"$size" netgen_512x512x32.png $out/share/icons/hicolor/"$size"x"$size"/apps/netgen.png
         fi
       done;
-
-      # Create desktop item, so we can pick it from the KDE/GNOME menu
-      mkdir -pv $out/share/applications
-      cp ${desktopItem}/share/applications/* $out/share/applications
     '';
 
   doInstallCheck = true;
