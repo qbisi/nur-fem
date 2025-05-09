@@ -14,6 +14,7 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
+    flake-compat.url = "github:nix-community/flake-compat";
   };
 
   outputs =
