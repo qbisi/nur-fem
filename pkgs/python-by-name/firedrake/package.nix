@@ -5,6 +5,8 @@
   buildPythonPackage,
   fetchFromGitHub,
   python,
+  gnumake,
+  parallel,
 
   # build-system
   build,
@@ -34,6 +36,8 @@
   scipy,
   sympy,
   islpy,
+  six, # required by firedrake-status
+  # pytest-split, # required by firedrake-run-split-tests
 
   # tests
   pytest,
@@ -41,8 +45,7 @@
   mpiCheckPhaseHook,
   writableTmpDirAsHomeHook,
 
-  # passthru.tests
-  firedrake,
+  # fullCheck
   vtk,
   pylit,
   nbval,
@@ -57,166 +60,178 @@ let
     mpi4py = mpi4py';
   };
   mpi-pytest' = mpi-pytest.override { mpi4py = mpi4py'; };
-in
-buildPythonPackage rec {
-  pname = "firedrake";
-  version = "2025.4.0.post0";
-  pyproject = true;
+  self = buildPythonPackage rec {
+    pname = "firedrake";
+    version = "2025.4.0.post0";
+    pyproject = true;
 
-  src = fetchFromGitHub {
-    owner = "firedrakeproject";
-    repo = "firedrake";
-    tag = version;
-    hash = "sha256-wQOS4v/YkIwXdQq6JMvRbmyhnzvx6wj0O6aszNa5ZMw=";
-  };
+    src = fetchFromGitHub {
+      owner = "firedrakeproject";
+      repo = "firedrake";
+      tag = version;
+      hash = "sha256-wQOS4v/YkIwXdQq6JMvRbmyhnzvx6wj0O6aszNa5ZMw=";
+    };
 
-  postPatch =
-    ''
-      substituteInPlace pyproject.toml --replace-fail \
-        "petsc4py==3.23.0" \
-        "petsc4py"
+    postPatch =
+      ''
+        patchShebangs scripts
 
-      substituteInPlace tests/pyop2/test_callables.py \
-        --replace-fail "-llapack" "-L${lib.getLib petsc4py.petscPackages.lapack}/lib -llapack"
-    ''
-    + lib.optionalString stdenv.hostPlatform.isLinux ''
-      substituteInPlace firedrake/petsc.py --replace-fail \
-        'program = ["ldd"]' \
-        'program = ["${lib.getBin glibc}/bin/ldd"]'
-    ''
-    + lib.optionalString stdenv.hostPlatform.isDarwin ''
-      substituteInPlace firedrake/petsc.py --replace-fail \
-        'program = ["otool"' \
-        'program = ["${stdenv.cc.bintools.bintools}/bin/otool"'
+        substituteInPlace pyproject.toml --replace-fail \
+          "petsc4py==3.23.0" \
+          "petsc4py"
+
+        substituteInPlace tests/pyop2/test_callables.py \
+          --replace-fail "-llapack" "-L${lib.getLib petsc4py.petscPackages.lapack}/lib -llapack"
+
+        substituteInPlace firedrake/_check/__init__.py \
+          --replace-fail "make -C" "${gnumake}/bin/make -C"
+
+        substituteInPlace scripts/firedrake-run-split-tests \
+          --replace-fail "parallel --line-buffer --tag" "${parallel}/bin/parallel --line-buffer --tag"
+      ''
+      + lib.optionalString stdenv.hostPlatform.isLinux ''
+        substituteInPlace firedrake/petsc.py --replace-fail \
+          'program = ["ldd"]' \
+          'program = ["${lib.getBin glibc}/bin/ldd"]'
+      ''
+      + lib.optionalString stdenv.hostPlatform.isDarwin ''
+        substituteInPlace firedrake/petsc.py --replace-fail \
+          'program = ["otool"' \
+          'program = ["${stdenv.cc.bintools.bintools}/bin/otool"'
+      '';
+
+    pythonRelaxDeps = [
+      "decorator"
+    ];
+
+    build-system = [
+      cython
+      libsupermesh
+      mpi4py
+      numpy
+      pkgconfig
+      pybind11
+      setuptools
+      petsc4py
+      rtree
+    ];
+
+    nativeBuildInputs = [
+      petsc4py.petscPackages.mpi
+    ];
+
+    dependencies =
+      [
+        decorator
+        cachetools
+        mpi4py'
+        fenics-ufl
+        firedrake-fiat
+        h5py'
+        libsupermesh
+        loopy
+        petsc4py
+        numpy
+        packaging
+        pkgconfig
+        progress
+        pyadjoint-ad
+        pycparser
+        pytools
+        requests
+        rtree
+        scipy
+        sympy
+        six
+        # pytest-split
+      ]
+      ++ pytools.optional-dependencies.siphash
+      ++ lib.optional stdenv.hostPlatform.isDarwin islpy;
+
+    postFixup = lib.optionalString stdenv.hostPlatform.isDarwin ''
+      install_name_tool -add_rpath ${libsupermesh}/${python.sitePackages}/libsupermesh/lib \
+        $out/${python.sitePackages}/firedrake/cython/supermeshimpl.cpython-*-darwin.so
     '';
 
-  pythonRelaxDeps = [
-    "decorator"
-  ];
+    doCheck = true;
 
-  build-system = [
-    cython
-    libsupermesh
-    mpi4py
-    numpy
-    pkgconfig
-    pybind11
-    setuptools
-    petsc4py
-    rtree
-  ];
+    pythonImportsCheck = [ "firedrake" ];
 
-  nativeBuildInputs = [
-    petsc4py.petscPackages.mpi
-  ];
+    nativeCheckInputs = [
+      pytest
+      mpi-pytest'
+      mpiCheckPhaseHook
+      writableTmpDirAsHomeHook
+    ];
 
-  dependencies =
-    [
-      decorator
-      cachetools
-      mpi4py'
-      fenics-ufl
-      firedrake-fiat
-      h5py'
-      libsupermesh
-      loopy
-      petsc4py
-      numpy
-      packaging
-      pkgconfig
-      progress
-      pyadjoint-ad
-      pycparser
-      pytools
-      requests
-      rtree
-      scipy
-      sympy
-    ]
-    ++ pytools.optional-dependencies.siphash
-    ++ lib.optional stdenv.hostPlatform.isDarwin islpy;
+    preCheck = ''
+      rm -rf firedrake pyop2 tinyasm tsfc
+      export VIRTUAL_ENV=$HOME
+    '';
 
-  postFixup = lib.optionalString stdenv.hostPlatform.isDarwin ''
-    install_name_tool -add_rpath ${libsupermesh}/${python.sitePackages}/libsupermesh/lib \
-      $out/${python.sitePackages}/firedrake/cython/supermeshimpl.cpython-*-darwin.so
-  '';
+    # run official smoke tests
+    checkPhase = ''
+      runHook preCheck
 
-  doCheck = true;
+      make check
 
-  pythonImportsCheck = [ "firedrake" ];
+      runHook postCheck
+    '';
 
-  nativeCheckInputs = [
-    pytest
-    mpi-pytest'
-    mpiCheckPhaseHook
-    writableTmpDirAsHomeHook
-  ];
+    passthru.tests = {
+      fullCheck = buildPythonPackage {
+        pname = "${pname}-fullCheck";
+        inherit
+          src
+          version
+          postPatch
+          preCheck
+          ;
+        format = "other";
 
-  preCheck = ''
-    rm -rf firedrake pyop2 tinyasm tsfc
-    export VIRTUAL_ENV=$HOME
-  '';
+        __darwinAllowLocalNetworking = true;
 
-  checkPhase = ''
-    runHook preCheck
+        dontBuild = true;
+        dontInstall = true;
 
-    make check
+        nativeCheckInputs = [
+          self
+          vtk
+          pylit
+          nbval
+          ipympl
+          pytest-xdist
+          mpi-pytest'
+          pytestCheckHook
+          mpiCheckPhaseHook
+          writableTmpDirAsHomeHook
+        ];
 
-    runHook postCheck
-  '';
+        # PYOP2_CFLAGS is used to compile some legacy c code in tests kernel.
+        env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
 
-  passthru.tests = {
-    fullCheck = buildPythonPackage {
-      pname = "${pname}-fullCheck";
-      inherit
-        src
-        version
-        postPatch
-        preCheck
-        ;
-      format = "other";
+        pytestFlagsArray = [
+          "tests"
+        ];
 
-      __darwinAllowLocalNetworking = true;
+        disabledTests = [
+          # require decorator<=4.4.2
+          "test_dat_illegal_name"
+          "test_dat_illegal_set"
+        ];
+      };
+    };
 
-      dontBuild = true;
-      dontInstall = true;
-
-      nativeCheckInputs = [
-        firedrake
-        vtk
-        pylit
-        nbval
-        ipympl
-        pytest-xdist
-        mpi-pytest'
-        pytestCheckHook
-        mpiCheckPhaseHook
-        writableTmpDirAsHomeHook
+    meta = {
+      homepage = "https://www.firedrakeproject.org";
+      downloadPage = "https://github.com/firedrakeproject/firedrake";
+      description = "Automated system for the portable solution of partial differential equations using the finite element method";
+      license = with lib.licenses; [
+        bsd3
+        lgpl3Plus
       ];
-
-      # PYOP2_CFLAGS is used to compile some legacy c code in tests kernel.
-      env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
-
-      pytestFlagsArray = [
-        "tests"
-      ];
-
-      disabledTests = [
-        # require decorator<=4.4.2
-        "test_dat_illegal_name"
-        "test_dat_illegal_set"
-      ];
+      maintainers = with lib.maintainers; [ qbisi ];
     };
   };
-
-  meta = {
-    homepage = "https://www.firedrakeproject.org";
-    downloadPage = "https://github.com/firedrakeproject/firedrake";
-    description = "Automated system for the portable solution of partial differential equations using the finite element method";
-    license = with lib.licenses; [
-      bsd3
-      lgpl3Plus
-    ];
-    maintainers = with lib.maintainers; [ qbisi ];
-  };
-}
+in
+self
