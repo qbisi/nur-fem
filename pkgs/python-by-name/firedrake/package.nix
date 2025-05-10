@@ -1,10 +1,11 @@
 {
   lib,
-  glibc,
   stdenv,
   buildPythonPackage,
   fetchFromGitHub,
   python,
+  glibc,
+  gnumake,
   parallel,
 
   # build-system
@@ -35,10 +36,10 @@
   sympy,
   islpy,
   matplotlib,
+  pytest,
+  pytest-split,
 
   # tests
-  pytest,
-  # pytest-split,
   mpi-pytest,
   mpiCheckPhaseHook,
   writableTmpDirAsHomeHook,
@@ -70,7 +71,10 @@ let
       hash = "sha256-wQOS4v/YkIwXdQq6JMvRbmyhnzvx6wj0O6aszNa5ZMw=";
     };
 
-    patches = [ ./move-spydump-to-script-files.patch ];
+    patches = [
+      ./fix-firedrake-check-in-bdist.patch
+      ./move-spydump-to-script-files.patch
+    ];
 
     postPatch =
       ''
@@ -80,14 +84,14 @@ let
         substituteInPlace pyproject.toml --replace-fail \
           "petsc4py==3.23.0" "petsc4py"
 
-        # firedrake-{check,status} make sense only when installed via official script
-        sed '/^firedrake-\(check\|status\)/d' pyproject.toml
-
-        substituteInPlace tests/pyop2/test_callables.py \
-          --replace-fail "-llapack" "-L${lib.getLib petsc4py.petscPackages.lapack}/lib -llapack"
+        # firedrake-status does not make sense in our binary distribution
+        sed '/^firedrake-status/d' pyproject.toml
 
         substituteInPlace scripts/firedrake-run-split-tests \
           --replace-fail "parallel --line-buffer --tag" "${parallel}/bin/parallel --line-buffer --tag"
+
+        substituteInPlace  firedrake/_check/__init__.py \
+          --replace-fail "make" "${gnumake}/bin/make"
       ''
       + lib.optionalString stdenv.hostPlatform.isLinux ''
         substituteInPlace firedrake/petsc.py --replace-fail \
@@ -142,7 +146,9 @@ let
         rtree
         scipy
         sympy
-        # pytest-split
+        # required by firedrake-run-split-tests
+        pytest
+        pytest-split
         # required by spydump
         matplotlib
       ]
@@ -159,7 +165,6 @@ let
     pythonImportsCheck = [ "firedrake" ];
 
     nativeCheckInputs = [
-      pytest
       mpi-pytest'
       mpiCheckPhaseHook
       writableTmpDirAsHomeHook
@@ -184,7 +189,6 @@ let
         inherit
           src
           version
-          postPatch
           preCheck
           ;
         format = "other";
@@ -206,6 +210,8 @@ let
           mpiCheckPhaseHook
           writableTmpDirAsHomeHook
         ];
+
+        buildInputs = [ petsc4py.petscPackages.lapack ];
 
         # PYOP2_CFLAGS is used to compile some legacy c code in tests kernel.
         env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
