@@ -16,7 +16,11 @@ buildPythonPackage rec {
     owner = "milde";
     repo = "pylit";
     tag = version;
-    hash = "sha256-kXiWRRccv3ZI0v6efJRLYJ2Swx60W3QUtM1AEF6IMpo=";
+    hash = "sha256-wr2Gz5DCeCVULe9k/DHd+Jhbfc4q4wSoJrcWaJUvWWw=";
+    # fix hash mismatch on linux/darwin platforms
+    postFetch = ''
+      rm -f $out/doc/logo/py{L,l}it-bold-framed.svg
+    '';
   };
 
   # replace legacy nose module with pytest
