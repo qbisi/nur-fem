@@ -5,11 +5,9 @@
   buildPythonPackage,
   fetchFromGitHub,
   python,
-  gnumake,
   parallel,
 
   # build-system
-  build,
   setuptools,
   cython,
   pybind11,
@@ -36,11 +34,11 @@
   scipy,
   sympy,
   islpy,
-  six, # required by firedrake-status
-  # pytest-split, # required by firedrake-run-split-tests
+  matplotlib,
 
   # tests
   pytest,
+  # pytest-split,
   mpi-pytest,
   mpiCheckPhaseHook,
   writableTmpDirAsHomeHook,
@@ -72,19 +70,21 @@ let
       hash = "sha256-wQOS4v/YkIwXdQq6JMvRbmyhnzvx6wj0O6aszNa5ZMw=";
     };
 
+    patches = [ ./move-spydump-to-script-files.patch ];
+
     postPatch =
       ''
         patchShebangs scripts
 
+        # relax build-dependency petsc4py
         substituteInPlace pyproject.toml --replace-fail \
-          "petsc4py==3.23.0" \
-          "petsc4py"
+          "petsc4py==3.23.0" "petsc4py"
+
+        # firedrake-{check,status} make sense only when installed via official script
+        sed '/^firedrake-\(check\|status\)/d' pyproject.toml
 
         substituteInPlace tests/pyop2/test_callables.py \
           --replace-fail "-llapack" "-L${lib.getLib petsc4py.petscPackages.lapack}/lib -llapack"
-
-        substituteInPlace firedrake/_check/__init__.py \
-          --replace-fail "make -C" "${gnumake}/bin/make -C"
 
         substituteInPlace scripts/firedrake-run-split-tests \
           --replace-fail "parallel --line-buffer --tag" "${parallel}/bin/parallel --line-buffer --tag"
@@ -142,8 +142,9 @@ let
         rtree
         scipy
         sympy
-        six
         # pytest-split
+        # required by spydump
+        matplotlib
       ]
       ++ pytools.optional-dependencies.siphash
       ++ lib.optional stdenv.hostPlatform.isDarwin islpy;
@@ -166,7 +167,6 @@ let
 
     preCheck = ''
       rm -rf firedrake pyop2 tinyasm tsfc
-      export VIRTUAL_ENV=$HOME
     '';
 
     # run official smoke tests
