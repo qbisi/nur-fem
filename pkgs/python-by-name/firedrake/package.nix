@@ -225,7 +225,7 @@ let
     meta = {
       homepage = "https://www.firedrakeproject.org";
       downloadPage = "https://github.com/firedrakeproject/firedrake";
-      description = "Automated system for the portable solution of partial differential equations using the finite element method";
+      description = "Automated Finite Element System";
       license = with lib.licenses; [
         bsd3
         lgpl3Plus
