@@ -72,6 +72,13 @@
               python3Packages = final;
             }
           );
+
+          vtk = prev.toPythonModule (
+            final.pkgs.vtk.override {
+              enablePython = true;
+              python3Packages = final;
+            }
+          );
         };
     };
 
