@@ -58,6 +58,14 @@
 
             formatter = pkgs.nixfmt-rfc-style;
 
+            devShells.default = pkgs.mkShell {
+              packages = [
+                (pkgs.python3.withPackages (_: [
+                  config.legacyPackages.python3Packages.vtk
+                ]))
+              ];
+            };
+
             packages =
               (lib.packagesFromDirectoryRecursive {
                 inherit (self'.legacyPackages) callPackage;
