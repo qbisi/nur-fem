@@ -51,6 +51,17 @@ buildPythonPackage rec {
 
   doCheck = false;
 
+  nativeCheckInputs = [
+    pytestCheckHook
+    writableTmpDirAsHomeHook
+    trimesh
+    ipython
+    scipy
+    hypothesis
+    pytest-cases
+    meshio
+  ];
+
   meta = {
     description = "Easier Pythonic interface to VTK";
     homepage = "https://pyvista.org";
