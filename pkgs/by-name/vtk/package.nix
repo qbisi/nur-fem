@@ -53,6 +53,10 @@
   qt6,
   python3Packages,
 
+  # setupHook
+  mesa,
+  writeText,
+
   # custom options
   mpiSupport ? true,
   qtVersion ? 6,
@@ -232,6 +236,15 @@ stdenv.mkDerivation (finalAttrs: {
 
   postFixup = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
     patchelf --add-rpath ${lib.getLib libGL}/lib $out/lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
+  '';
+
+  setupHook = writeText "setup-hook.sh" ''
+    preCheckHooks+=('setupVtkCheck')
+    preInstallCheckHooks+=('setupVtkCheck')
+
+    setupVtkCheck () {
+      export __EGL_VENDOR_LIBRARY_DIRS="${mesa}/share/glvnd/egl_vendor.d"
+    }
   '';
 
   passthru = {

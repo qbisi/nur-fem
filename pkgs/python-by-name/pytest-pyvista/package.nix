@@ -1,6 +1,5 @@
 {
   lib,
-  pkgs,
   buildPythonPackage,
   fetchFromGitHub,
   flit-core,
@@ -33,8 +32,6 @@ buildPythonPackage rec {
     pyvista
     pytestCheckHook
   ];
-
-  env.__EGL_VENDOR_LIBRARY_DIRS = "${pkgs.mesa}/share/glvnd/egl_vendor.d";
 
   meta = {
     description = "Plugin to test PyVista plot outputs";

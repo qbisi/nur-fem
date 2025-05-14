@@ -12,7 +12,6 @@
   pyvista,
 
   # test
-  pkgs,
   xvfb-run,
   pyqt6,
   pytest,
@@ -51,7 +50,6 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     xvfb-run
-    dbus
     pyqt6
     pytest
     pytest-qt
@@ -66,8 +64,6 @@ buildPythonPackage rec {
 
     runHook postCheck
   '';
-
-  env.__EGL_VENDOR_LIBRARY_DIRS = "${pkgs.mesa}/share/glvnd/egl_vendor.d";
 
   meta = {
     homepage = "http://qtdocs.pyvista.org/";
