@@ -2,10 +2,23 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
+
+  # build-system
   setuptools,
   setuptools-scm,
+
+  # dependencies
   qtpy,
   pyvista,
+
+  # test
+  pkgs,
+  xvfb-run,
+  pyqt6,
+  pytest,
+  pytest-qt,
+  pytest-cov,
+  writableTmpDirAsHomeHook,
 }:
 
 buildPythonPackage rec {
@@ -19,6 +32,11 @@ buildPythonPackage rec {
     hash = "sha256-B8NyJVEYzqUAG2zi/YuowpRhbHUNprPA0F6Uh2hYsF0=";
   };
 
+  postPatch = ''
+    substituteInPlace tests/conftest.py \
+      --replace-fail "pytest.skip(NO_PLOTTING, " "pytest.skip("
+  '';
+
   build-system = [
     setuptools
     setuptools-scm
@@ -31,9 +49,25 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "pyvistaqt" ];
 
-  # Qt related tests cannot run in sandbox
-  # Fatal Python error: Aborted
-  doCheck = false;
+  nativeCheckInputs = [
+    xvfb-run
+    dbus
+    pyqt6
+    pytest
+    pytest-qt
+    pytest-cov
+    writableTmpDirAsHomeHook
+  ];
+
+  checkPhase = ''
+    runHook preCheck
+
+    xvfb-run -s '-screen 0 1920x1080x24' pytest
+
+    runHook postCheck
+  '';
+
+  env.__EGL_VENDOR_LIBRARY_DIRS = "${pkgs.mesa}/share/glvnd/egl_vendor.d";
 
   meta = {
     homepage = "http://qtdocs.pyvista.org/";
