@@ -174,50 +174,13 @@ buildPythonPackage rec {
     runHook postCheck
   '';
 
-    passthru.tests = {
-      fullCheck = buildPythonPackage {
-        pname = "${pname}-fullCheck";
-        inherit
-          src
-          version
-          preCheck
-          ;
-        format = "other";
-
-        __darwinAllowLocalNetworking = true;
-
-        dontBuild = true;
-        dontInstall = true;
-
-        nativeCheckInputs = [
-          firedrake
-          vtk
-          pylit
-          nbval
-          ipympl
-          pytest-xdist
-          firedrakePackages.mpi-pytest
-          pytestCheckHook
-          mpiCheckPhaseHook
-          writableTmpDirAsHomeHook
-        ];
-
-        buildInputs = [ petsc4py.petscPackages.lapack ];
-
-        # PYOP2_CFLAGS is used to compile some legacy c code in tests kernel.
-        env.PYOP2_CFLAGS = "-Wno-incompatible-pointer-types";
-
-        pytestFlagsArray = [
-          "tests"
-        ];
-
-        disabledTests = [
-          # require decorator<=4.4.2
-          "test_dat_illegal_name"
-          "test_dat_illegal_set"
-        ];
+  passthru = {
+    tests = lib.optionalAttrs stdenv.hostPlatform.isLinux {
+      mpich = firedrake.override {
+        petsc4py = petsc4py.override { mpi = mpich; };
       };
     };
+  };
 
   meta = {
     homepage = "https://www.firedrakeproject.org";
