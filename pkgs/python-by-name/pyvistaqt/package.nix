@@ -17,6 +17,7 @@
   pytest,
   pytest-qt,
   pytest-cov,
+  nixGLHook,
   writableTmpDirAsHomeHook,
 }:
 
@@ -54,6 +55,7 @@ buildPythonPackage rec {
     pytest
     pytest-qt
     pytest-cov
+    nixGLHook
     writableTmpDirAsHomeHook
   ];
 

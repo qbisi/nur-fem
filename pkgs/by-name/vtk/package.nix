@@ -4,68 +4,61 @@
   fetchurl,
   fetchpatch2,
   cmake,
+  python3Packages,
+
+  # buildInputs
   mpi,
-
-  double-conversion,
-  verdict,
-  libarchive,
   fmt,
+  eigen,
+  exprtk,
+  utf8cpp,
+  verdict,
+  nlohmann_json,
+  double-conversion,
 
+  # common data libraries
   lz4,
-  pugixml,
   xz,
   zlib,
-
-  libjpeg,
-  libpng,
-  libtiff,
+  pugixml,
   expat,
   jsoncpp,
   libxml2,
 
-  exprtk,
-
-  boost,
-  cli11,
-  eigen,
-  nlohmann_json,
-  utf8cpp,
-
+  # io modules
+  ffmpeg,
+  libjpeg,
+  libpng,
+  libtiff,
   proj,
-  gl2ps,
+  sqlite,
+  libogg,
+  libharu,
+  libtheora,
   hdf5,
   netcdf,
-  libharu,
-  libogg,
-  libtheora,
-  freetype,
-  fontconfig,
+  adios2,
+  opencascade-occt,
 
-  sqlite,
-  tbb_2022_0,
+  # threading
   llvmPackages,
+  tbb_2022_0,
 
-  libGL,
+  # rendering
+  freetype,
   libX11,
   libXcursor,
-  apple-sdk_12,
+  gl2ps,
+  libGL,
   qt5,
   qt6,
-  python3Packages,
-
-  # setupHook
-  mesa,
-  writeText,
 
   # custom options
   mpiSupport ? true,
   qtVersion ? 6,
-  enableEgl ? !stdenv.hostPlatform.isDarwin,
   enablePython ? true,
-  # Use GLES instead of GL, some platforms have better support for one than the other
   preferGLES ? stdenv.hostPlatform.isAarch && !stdenv.hostPlatform.isDarwin,
 }:
-assert enableEgl -> !stdenv.hostPlatform.isDarwin;
 
 let
   qtPackages =
@@ -77,12 +70,21 @@ let
       throw "qtVersion must be either 5 or 6";
   vtkPackages = qtPackages.overrideScope (
     final: prev: {
-      inherit python3Packages mpi mpiSupport;
+      inherit
+        mpi
+        mpiSupport
+        enablePython
+        python3Packages
+        ;
+      python3 = python3Packages.python;
+      pythonSupport = enablePython;
+
       hdf5 = hdf5.override {
         inherit mpi mpiSupport;
         cppSupport = !mpiSupport;
       };
       netcdf = final.callPackage netcdf.override { };
+      adios2 = final.callPackage adios2.override { };
     }
   );
 in
@@ -104,13 +106,9 @@ stdenv.mkDerivation (finalAttrs: {
       url = "https://gitlab.archlinux.org/archlinux/packaging/packages/vtk/-/raw/b4d07bd7ee5917e2c32f7f056cf78472bcf1cec2/netcdf-4.9.3.patch?full_index=1";
       hash = "sha256-h1NVeLuwAj7eUG/WSvrpXN9PtpjFQ/lzXmJncwY0r7w=";
     })
-    # (fetchpatch2 {
-    #   url = "https://gitlab.archlinux.org/archlinux/packaging/packages/vtk/-/raw/6363b17dcc573d3d767d9b8039bb4dfbbdd5860a/fix-gcc-15.patch?full_index=1";
-    #   hash = "sha256-vvvj+fzaPGCChu9hpaXfM53q//KkNs4rLsiqtyZWcOg=";
-    # })
   ];
 
-  postPatch = ''
+  postPatch = lib.optionalString stdenv.cc.isClang ''
     substituteInPlace IO/Geometry/vtkGLTFDocumentLoaderInternals.cxx \
       --replace-fail "return value == extensionUsedByModel;" "return value == extensionUsedByModel.get<std::string>();" \
       --replace-fail "return value == extensionRequiredByModel;" "return value == extensionRequiredByModel.get<std::string>();"
@@ -130,49 +128,46 @@ stdenv.mkDerivation (finalAttrs: {
 
   buildInputs =
     [
-      double-conversion
-      verdict
-      libarchive
       fmt
+      eigen
+      exprtk
+      utf8cpp
+      verdict
+      nlohmann_json
+      double-conversion
 
+      # common data libraries
       lz4
-      pugixml
       xz
       zlib
-
-      libjpeg
-      libpng
-      libtiff
+      pugixml
       expat
       jsoncpp
       libxml2
 
-      exprtk
-
-      boost
-      cli11
-      eigen
-      nlohmann_json
-      utf8cpp
-
+      # io modules
+      ffmpeg
+      libjpeg
+      libpng
+      libtiff
       proj
-      libharu
-      libogg
-      libtheora
-      freetype
-      fontconfig
-
-      tbb_2022_0
-
       sqlite
+      libogg
+      libharu
+      libtheora
       vtkPackages.hdf5
       vtkPackages.netcdf
+      vtkPackages.adios2
+      opencascade-occt
+
+      # rendering
+      freetype
       vtkPackages.qttools
       vtkPackages.qtdeclarative
     ]
     ++ lib.optional mpiSupport mpi
     ++ lib.optional stdenv.cc.isClang llvmPackages.openmp
-    ++ lib.optional stdenv.hostPlatform.isDarwin apple-sdk_12;
+    ++ lib.optional stdenv.hostPlatform.isLinux tbb_2022_0;
 
   propagatedBuildInputs =
     lib.optionals stdenv.hostPlatform.isLinux [
@@ -199,22 +194,20 @@ stdenv.mkDerivation (finalAttrs: {
     [
       "-Wno-dev"
       (lib.cmakeBool "VTK_VERSIONED_INSTALL" false)
-      # (lib.cmakeBool "VTK_BUILD_ALL_MODULES" true)
       (lib.cmakeBool "VTK_USE_MPI" mpiSupport)
       (lib.cmakeBool "VTK_OPENGL_USE_GLES" preferGLES)
-      (lib.cmakeBool "VTK_OPENGL_HAS_EGL" enableEgl)
       (lib.cmakeBool "VTK_USE_EXTERNAL" true)
-      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_fast_float" false) # version incompatible
-      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_pegtl" false) # version incompatible
+      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_fast_float" false) # required version incompatible
+      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_pegtl" false) # required version incompatible
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_cgns" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_ioss" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_token" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" (!stdenv.hostPlatform.isDarwin)) # External gl2ps causes failure linking to macOS OpenGL.framework
-      (lib.cmakeBool "VTK_SMP_ENABLE_SEQUENTIAL" true)
-      (lib.cmakeBool "VTK_SMP_ENABLE_STDTHREAD" true)
-      (lib.cmakeBool "VTK_SMP_ENABLE_TBB" true)
-      (lib.cmakeBool "VTK_SMP_ENABLE_OPENMP" true)
-      (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" "TBB")
+      (lib.cmakeBool "VTK_SMP_ENABLE_TBB" (!stdenv.hostPlatform.isDarwin)) # TBB cause segfault on macOS
+      (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" "OpenMP")
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOCCT" "YES")
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOADIOS2" "YES")
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOFFMPEG" "YES")
       (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
       (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
@@ -223,12 +216,12 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optionals enablePython [
       (lib.cmakeBool "VTK_WRAP_PYTHON" true)
-      # (lib.cmakeBool "VTK_BUILD_PYI_FILES" true)
+      (lib.cmakeBool "VTK_BUILD_PYI_FILES" true)
       (lib.cmakeFeature "VTK_PYTHON_VERSION" "3")
     ];
 
   # byte-compile python modules since the CMake build does not do it
-  postInstall = lib.optionalString (enablePython && stdenv.hostPlatform.isDarwin) ''
+  postInstall = lib.optionalString enablePython ''
     python -m compileall -s $out $out/${python3Packages.python.sitePackages}
   '';
 
@@ -238,19 +231,9 @@ stdenv.mkDerivation (finalAttrs: {
     patchelf --add-rpath ${lib.getLib libGL}/lib $out/lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
   '';
 
-  setupHook = writeText "setup-hook.sh" ''
-    preCheckHooks+=('setupVtkCheck')
-    preInstallCheckHooks+=('setupVtkCheck')
-
-    setupVtkCheck () {
-      export __EGL_VENDOR_LIBRARY_DIRS="${mesa}/share/glvnd/egl_vendor.d"
-    }
-  '';
-
   passthru = {
     inherit
       qtVersion
-      enableEgl
       enablePython
       mpiSupport
       vtkPackages
@@ -262,10 +245,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Open source libraries for 3D computer graphics, image processing and visualization";
     homepage = "https://www.vtk.org/";
     license = lib.licenses.bsd3;
-    maintainers = with lib.maintainers; [
-      qbisi
-    ];
+    maintainers = with lib.maintainers; [ qbisi ];
     platforms = lib.platforms.unix;
-    broken = stdenv.hostPlatform.isDarwin;
   };
 })

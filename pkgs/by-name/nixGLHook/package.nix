@@ -17,5 +17,6 @@ makeSetupHook {
   substitutions = {
     libgl_driver_path = "${lib.makeSearchPathOutput "lib" "lib/dri" mesa-drivers}";
     ld_library_path = "${lib.makeLibraryPath mesa-drivers}:${glxindirect}/lib";
+    mesa = "${mesa}";
   };
 } ./nixgl-hook.sh

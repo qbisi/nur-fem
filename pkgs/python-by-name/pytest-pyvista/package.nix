@@ -5,6 +5,7 @@
   flit-core,
   pytest,
   pyvista,
+  nixGLHook,
   pytestCheckHook,
 }:
 
@@ -30,6 +31,7 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     pyvista
+    nixGLHook
     pytestCheckHook
   ];
 
