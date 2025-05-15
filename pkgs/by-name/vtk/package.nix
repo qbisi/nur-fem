@@ -53,10 +53,16 @@
   qt5,
   qt6,
 
+  # check
+  cli11,
+  nixGLHook,
+  ctestCheckHook,
+  mpiCheckPhaseHook,
+
   # custom options
   mpiSupport ? true,
   qtVersion ? 6,
-  enablePython ? true,
+  enablePython ? false,
   preferGLES ? stdenv.hostPlatform.isAarch && !stdenv.hostPlatform.isDarwin,
 }:
 
@@ -92,10 +98,16 @@ stdenv.mkDerivation (finalAttrs: {
   pname = "vtk";
   version = "9.4.2";
 
-  src = fetchurl {
-    url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTK-${finalAttrs.version}.tar.gz";
-    hash = "sha256-NsmODalrsSow/lNwgJeqlJLntm1cOzZuHI3CUeKFagI=";
-  };
+  srcs = [
+    (fetchurl {
+      url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTK-${finalAttrs.version}.tar.gz";
+      hash = "sha256-NsmODalrsSow/lNwgJeqlJLntm1cOzZuHI3CUeKFagI=";
+    })
+    (fetchurl {
+      url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTKData-${finalAttrs.version}.tar.gz";
+      hash = "sha256-Hgqj32POOXXSnutmmF/DczMIJPkMKZG+UpUa0qgkGxE=";
+    })
+  ];
 
   patches = [
     # (fetchpatch2 {
@@ -118,13 +130,7 @@ stdenv.mkDerivation (finalAttrs: {
     echo "vtk_module_set_properties(VTK::FiltersExtraction CXX_STANDARD 20)" >> Filters/Extraction/CMakeLists.txt
   '';
 
-  nativeBuildInputs =
-    [
-      cmake
-    ]
-    ++ lib.optionals enablePython [
-      python3Packages.python
-    ];
+  nativeBuildInputs = [ cmake ] ++ lib.optional enablePython python3Packages.python;
 
   buildInputs =
     [
@@ -218,7 +224,24 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_WRAP_PYTHON" true)
       (lib.cmakeBool "VTK_BUILD_PYI_FILES" true)
       (lib.cmakeFeature "VTK_PYTHON_VERSION" "3")
+    ]
+    ++ lib.optionals finalAttrs.finalPackage.doCheck [
+      (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
     ];
+
+  doCheck = false;
+
+  # preCheck = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
+  #   patchelf --add-rpath ${lib.getLib libGL}/lib lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
+  # '';
+
+  __darwinAllowLocalNetworking = finalAttrs.finalPackage.doCheck;
+
+  nativeCheckInputs = [
+    cli11
+    nixGLHook
+    ctestCheckHook
+  ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
 
   # byte-compile python modules since the CMake build does not do it
   postInstall = lib.optionalString enablePython ''
