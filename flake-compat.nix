@@ -1,8 +1,8 @@
 {
-  system ? builtins.currentSystem,
+  system ? args.system or builtins.currentSystem,
   flakeLockPath ? ./flake.lock,
   src ? ./.,
-}:
+}@args:
 let
   lock = builtins.fromJSON (builtins.readFile flakeLockPath);
   inherit (lock.nodes.flake-compat.locked)
