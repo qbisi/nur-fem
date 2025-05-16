@@ -12,14 +12,13 @@
   pyvista,
 
   # test
-  xvfb,
-  weston,
   pyqt6,
   pytest,
   pytest-qt,
   pytest-cov,
   nixGLHook,
   pytestCheckHook,
+  weston,
   headlessDisplayCheckHook,
   writableTmpDirAsHomeHook,
 }:
@@ -52,16 +51,30 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "pyvistaqt" ];
 
+  # This test failure maybe related to upstream Xwayland
+  # (EE) Backtrace:
+  # (EE) 0: /nix/store/mw5kn5fn7m335r404fr14w3jf9523ph4-xwayland-24.1.6/bin/Xwayland (OsSigHandler+0x33) [0x587063]
+  # (EE) unw_get_proc_name failed: no unwind info found [-10]
+  # (EE) 1: <signal handler called>
+  # (EE) 2: /nix/store/mw5kn5fn7m335r404fr14w3jf9523ph4-xwayland-24.1.6/bin/Xwayland (xwl_cursor_warped_to+0x90) [0x429a20]
+  # (EE) 3: /nix/store/mw5kn5fn7m335r404fr14w3jf9523ph4-xwayland-24.1.6/bin/Xwayland (ProcWarpPointer+0x1cc) [0x4b2dec]
+  disabledTests = [
+    "test_mouse_interactions"
+  ];
+
   nativeCheckInputs = [
-    xvfb
     pyqt6
     pytest-qt
     pytest-cov
     nixGLHook
     pytestCheckHook
+    weston
     headlessDisplayCheckHook
     writableTmpDirAsHomeHook
   ];
+
+  # capable of doing onscreen/offscreen plot
+  env.ALLOW_PLOTTING = "true";
 
   meta = {
     homepage = "http://qtdocs.pyvista.org/";
