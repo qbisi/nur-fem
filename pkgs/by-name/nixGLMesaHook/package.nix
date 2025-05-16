@@ -12,11 +12,11 @@ let
   '';
 in
 makeSetupHook {
-  name = "nixgl-hook";
+  name = "nixGLMesaHook";
 
   substitutions = {
     libgl_driver_path = "${lib.makeSearchPathOutput "lib" "lib/dri" mesa-drivers}";
     ld_library_path = "${lib.makeLibraryPath mesa-drivers}:${glxindirect}/lib";
-    mesa = "${mesa}";
+    egl_vendor_dir = "${mesa}/share/glvnd/egl_vendor.d";
   };
-} ./nixgl-hook.sh
+} ./nixgl-mesa-hook.sh

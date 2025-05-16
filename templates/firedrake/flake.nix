@@ -79,7 +79,7 @@
                 python-env
 
                 # add extra pkgs here
-                pkgs.nixGLHook   # required for running grphic program via ssh x11 forwarding
+                pkgs.nixGLMesaHook   # required for running grphic program via ssh x11 forwarding
                 # pkgs.paraview
               ];
 

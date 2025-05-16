@@ -16,7 +16,7 @@
   pytest,
   pytest-qt,
   pytest-cov,
-  nixGLHook,
+  nixGLMesaHook,
   pytestCheckHook,
   weston,
   headlessDisplayCheckHook,
@@ -66,7 +66,7 @@ buildPythonPackage rec {
     pyqt6
     pytest-qt
     pytest-cov
-    nixGLHook
+    nixGLMesaHook
     pytestCheckHook
     weston
     headlessDisplayCheckHook

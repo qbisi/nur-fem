@@ -77,7 +77,7 @@
                 python-env
 
                 # add extra pkgs here
-                pkgs.nixGLHook
+                pkgs.nixGLMesaHook
                 # pkgs.paraview
               ];
 
