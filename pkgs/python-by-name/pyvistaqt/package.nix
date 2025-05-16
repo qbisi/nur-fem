@@ -12,12 +12,15 @@
   pyvista,
 
   # test
-  xvfb-run,
+  xvfb,
+  weston,
   pyqt6,
   pytest,
   pytest-qt,
   pytest-cov,
   nixGLHook,
+  pytestCheckHook,
+  headlessDisplayCheckHook,
   writableTmpDirAsHomeHook,
 }:
 
@@ -50,22 +53,15 @@ buildPythonPackage rec {
   pythonImportsCheck = [ "pyvistaqt" ];
 
   nativeCheckInputs = [
-    xvfb-run
+    xvfb
     pyqt6
-    pytest
     pytest-qt
     pytest-cov
     nixGLHook
+    pytestCheckHook
+    headlessDisplayCheckHook
     writableTmpDirAsHomeHook
   ];
-
-  checkPhase = ''
-    runHook preCheck
-
-    xvfb-run -s '-screen 0 1920x1080x24' pytest
-
-    runHook postCheck
-  '';
 
   meta = {
     homepage = "http://qtdocs.pyvista.org/";
