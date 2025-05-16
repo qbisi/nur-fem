@@ -55,9 +55,10 @@
 
   # check
   cli11,
-  nixGLHook,
   ctestCheckHook,
+  nixGLMesaHook,
   mpiCheckPhaseHook,
+  headlessDisplayCheckHook,
 
   # custom options
   mpiSupport ? true,
@@ -110,25 +111,33 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   patches = [
-    # (fetchpatch2 {
-    #   url = "https://gitlab.archlinux.org/archlinux/packaging/packages/vtk/-/raw/3fea08744ab6a859dacb7a6b6ab26f9272a8e6d4/vtk-occt.patch?full_index=1";
-    #   hash = "sha256-bQCnjFnM7qw1rgzVGPaV7tRh2yK8WYcbhIaKYwHEmC4=";
-    # })
     (fetchpatch2 {
       url = "https://gitlab.archlinux.org/archlinux/packaging/packages/vtk/-/raw/b4d07bd7ee5917e2c32f7f056cf78472bcf1cec2/netcdf-4.9.3.patch?full_index=1";
       hash = "sha256-h1NVeLuwAj7eUG/WSvrpXN9PtpjFQ/lzXmJncwY0r7w=";
     })
   ];
 
-  postPatch = lib.optionalString stdenv.cc.isClang ''
-    substituteInPlace IO/Geometry/vtkGLTFDocumentLoaderInternals.cxx \
-      --replace-fail "return value == extensionUsedByModel;" "return value == extensionUsedByModel.get<std::string>();" \
-      --replace-fail "return value == extensionRequiredByModel;" "return value == extensionRequiredByModel.get<std::string>();"
+  postPatch =
+    ''
+      substituteInPlace GUISupport/QtQuick/Testing/Cxx/CMakeLists.txt \
+        --replace-fail \
+        ''\'''${VTK_QML_DIR}' \
+        ''\'''$ENV{QML2_IMPORT_PATH}:''${VTK_QML_DIR}'
+    ''
+    # While char_traits<uint8_t> is not officially supported by any C++
+    # standard, gcc and libcxx(<19) have extensions to support the type. The
+    # C++20 standard introduces support for char_traits<char8_t>.
+    # Starting with libcxx-19, the extensions to support char_traits<T> where
+    # T is not a type specified by a C++ standard has been dropped. See
+    # https://reviews.llvm.org/D138307 for details.
+    + lib.optionalString stdenv.cc.isClang ''
+      substituteInPlace IO/Geometry/vtkGLTFDocumentLoaderInternals.cxx \
+        --replace-fail "return value == extensionUsedByModel;" "return value == extensionUsedByModel.get<std::string>();" \
+        --replace-fail "return value == extensionRequiredByModel;" "return value == extensionRequiredByModel.get<std::string>();"
 
-    # CXX_STANDARD 20 is needed for clang to support template char_traits<char8_t>
-    echo "vtk_module_set_properties(VTK::ParallelDIY CXX_STANDARD 20)" >> Parallel/DIY/CMakeLists.txt
-    echo "vtk_module_set_properties(VTK::FiltersExtraction CXX_STANDARD 20)" >> Filters/Extraction/CMakeLists.txt
-  '';
+      echo "vtk_module_set_properties(VTK::ParallelDIY CXX_STANDARD 20)" >> Parallel/DIY/CMakeLists.txt
+      echo "vtk_module_set_properties(VTK::FiltersExtraction CXX_STANDARD 20)" >> Filters/Extraction/CMakeLists.txt
+    '';
 
   nativeBuildInputs = [ cmake ] ++ lib.optional enablePython python3Packages.python;
 
@@ -209,8 +218,6 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_ioss" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_token" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" (!stdenv.hostPlatform.isDarwin)) # External gl2ps causes failure linking to macOS OpenGL.framework
-      (lib.cmakeBool "VTK_SMP_ENABLE_TBB" (!stdenv.hostPlatform.isDarwin)) # TBB cause segfault on macOS
-      (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" "OpenMP")
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOCCT" "YES")
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOADIOS2" "YES")
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOFFMPEG" "YES")
@@ -219,6 +226,9 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
       (lib.cmakeFeature "VTK_GROUP_ENABLE_Qt" "YES")
       (lib.cmakeFeature "VTK_QT_VERSION" (toString qtVersion))
+      (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" (
+        if stdenv.hostPlatform.isDarwin then "OpenMP" else "TBB"
+      ))
     ]
     ++ lib.optionals enablePython [
       (lib.cmakeBool "VTK_WRAP_PYTHON" true)
@@ -229,19 +239,41 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
     ];
 
-  doCheck = false;
+  # can not do headless display check on darwin.
+  doCheck = stdenv.hostPlatform.isLinux;
 
-  # preCheck = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
-  #   patchelf --add-rpath ${lib.getLib libGL}/lib lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
-  # '';
+  env = {
+    QML2_IMPORT_PATH = "${lib.getBin vtkPackages.qtdeclarative}/${vtkPackages.qtbase.qtQmlPrefix}";
+    # VTK_TESTING_IMAGE_COMPARE_METHOD = "LOOSE_VALID";
+  };
+
+  preCheck = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
+    patchelf --add-rpath ${lib.getLib libGL}/lib lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
+  '';
 
   __darwinAllowLocalNetworking = finalAttrs.finalPackage.doCheck;
 
   nativeCheckInputs = [
     cli11
-    nixGLHook
     ctestCheckHook
+    nixGLMesaHook
+    headlessDisplayCheckHook
   ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
+
+  disabledTests = [
+    # flaky tests
+    "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderItem"
+    "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderItemWidget"
+    "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderWindow"
+    "VTK::InteractionWidgetsPython-TestTensorWidget2"
+    "VTK::FiltersCellGridCxx-TestCellGridEvaluator"
+    # caught SIGSEGV/SIGTERM in mpiexec
+    "VTK::FiltersParallelCxx-MPI-DistributedData"
+    "VTK::FiltersParallelCxx-MPI-DistributedDataRenderPass"
+    # vtkShaderProgram.cxx:1145   ERR| vtkShaderProgram (0x1375050): Could not create shader object.
+    "VTK::RenderingOpenGL2Cxx-TestFluidMapper"
+    "VTK::RenderingOpenGL2Cxx-TestGlyph3DMapperPickability"
+  ];
 
   # byte-compile python modules since the CMake build does not do it
   postInstall = lib.optionalString enablePython ''
@@ -260,7 +292,6 @@ stdenv.mkDerivation (finalAttrs: {
       enablePython
       mpiSupport
       vtkPackages
-      preferGLES
       ;
   };
 

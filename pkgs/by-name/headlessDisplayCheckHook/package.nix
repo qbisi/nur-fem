@@ -1,5 +1,7 @@
 {
   stdenv,
+  weston,
+  mesa,
   makeSetupHook,
 }:
 
@@ -8,4 +10,5 @@ if stdenv.hostPlatform.isDarwin then
 else
   makeSetupHook {
     name = "headlessDisplayCheckHook";
+    propagatedBuildInputs = [ weston ];
   } ./headless-display-check-hook.sh

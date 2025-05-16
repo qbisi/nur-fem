@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   buildPythonPackage,
   fetchFromGitHub,
 
@@ -18,7 +19,6 @@
   pytest-cov,
   nixGLMesaHook,
   pytestCheckHook,
-  weston,
   headlessDisplayCheckHook,
   writableTmpDirAsHomeHook,
 }:
@@ -51,6 +51,8 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "pyvistaqt" ];
 
+  doCheck = !stdenv.hostPlatform.isDarwin;
+
   # This test failure maybe related to upstream Xwayland
   # (EE) Backtrace:
   # (EE) 0: /nix/store/mw5kn5fn7m335r404fr14w3jf9523ph4-xwayland-24.1.6/bin/Xwayland (OsSigHandler+0x33) [0x587063]
@@ -68,7 +70,6 @@ buildPythonPackage rec {
     pytest-cov
     nixGLMesaHook
     pytestCheckHook
-    weston
     headlessDisplayCheckHook
     writableTmpDirAsHomeHook
   ];
