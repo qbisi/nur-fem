@@ -119,7 +119,7 @@
           };
 
           overlays.pkgs-fem = final: prev: {
-            pkgs-fem = self."${prev.stdenv.hostPlatform.system}".legacyPackages;
+            pkgs-fem = self.legacyPackages."${prev.stdenv.hostPlatform.system}";
           };
         };
       }
