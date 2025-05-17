@@ -227,7 +227,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "VTK_GROUP_ENABLE_Qt" "YES")
       (lib.cmakeFeature "VTK_QT_VERSION" (toString qtVersion))
       (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" (
-        if stdenv.hostPlatform.isDarwin then "OpenMP" else "TBB"
+        if stdenv.hostPlatform.isDarwin then "Sequential" else "TBB"
       ))
     ]
     ++ lib.optionals enablePython [
@@ -244,7 +244,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   env = {
     QML2_IMPORT_PATH = "${lib.getBin vtkPackages.qtdeclarative}/${vtkPackages.qtbase.qtQmlPrefix}";
-    # VTK_TESTING_IMAGE_COMPARE_METHOD = "LOOSE_VALID";
   };
 
   preCheck = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
