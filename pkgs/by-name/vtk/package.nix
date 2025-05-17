@@ -41,7 +41,6 @@
   opencascade-occt,
 
   # threading
-  llvmPackages,
   tbb_2022_0,
 
   # rendering
@@ -181,7 +180,6 @@ stdenv.mkDerivation (finalAttrs: {
       vtkPackages.qtdeclarative
     ]
     ++ lib.optional mpiSupport mpi
-    ++ lib.optional stdenv.cc.isClang llvmPackages.openmp
     ++ lib.optional stdenv.hostPlatform.isLinux tbb_2022_0;
 
   propagatedBuildInputs =
@@ -226,8 +224,9 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
       (lib.cmakeFeature "VTK_GROUP_ENABLE_Qt" "YES")
       (lib.cmakeFeature "VTK_QT_VERSION" (toString qtVersion))
+      # `VTK_SMP_IMPLEMENTATION_TYPE` can be used to select one of Sequential, OpenMP, TBB, and STDThread.
       (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" (
-        if stdenv.hostPlatform.isDarwin then "Sequential" else "TBB"
+        if stdenv.hostPlatform.isDarwin then "STDThread" else "TBB"
       ))
     ]
     ++ lib.optionals enablePython [
@@ -239,7 +238,8 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
     ];
 
-  # can not do headless display check on darwin.
+  # The VTK package on the nix-darwin platform is not fully tested or supported with high priority.
+  # So we skip checks for Darwin. Contributions to improve support on Darwin are welcome!
   doCheck = stdenv.hostPlatform.isLinux;
 
   env = {
