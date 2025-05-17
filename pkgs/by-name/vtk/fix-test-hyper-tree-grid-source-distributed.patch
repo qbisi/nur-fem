@@ -1,0 +1,21 @@
+diff --git a/Filters/Sources/Testing/Cxx/TestHyperTreeGridSourceDistributed.cxx b/Filters/Sources/Testing/Cxx/TestHyperTreeGridSourceDistributed.cxx
+index c614ee9456..c5cbf4e7d5 100644
+--- a/Filters/Sources/Testing/Cxx/TestHyperTreeGridSourceDistributed.cxx
++++ b/Filters/Sources/Testing/Cxx/TestHyperTreeGridSourceDistributed.cxx
+@@ -7,6 +7,7 @@
+ #include "vtkHyperTreeGridSource.h"
+ #include "vtkLogger.h"
+ #include "vtkMPIController.h"
++#include <cstdint>
+ 
+ namespace
+ {
+@@ -21,7 +22,7 @@ struct SourceConfig
+   std::array<double, 3> GridScale;
+   std::string Descriptor;
+   std::string Mask;
+-  std::array<char, NbTrees> ExpectedProcess;
++  std::array<int8_t, NbTrees> ExpectedProcess;
+ };
+ }
+ 
