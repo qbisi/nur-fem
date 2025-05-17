@@ -63,7 +63,6 @@
   mpiSupport ? true,
   qtVersion ? 6,
   enablePython ? false,
-  preferGLES ? stdenv.hostPlatform.isAarch && !stdenv.hostPlatform.isDarwin,
 }:
 
 let
@@ -110,7 +109,6 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   patches = [
-    ./fix-test-hyper-tree-grid-source-distributed.patch
     (fetchpatch2 {
       url = "https://gitlab.archlinux.org/archlinux/packaging/packages/vtk/-/raw/b4d07bd7ee5917e2c32f7f056cf78472bcf1cec2/netcdf-4.9.3.patch?full_index=1";
       hash = "sha256-h1NVeLuwAj7eUG/WSvrpXN9PtpjFQ/lzXmJncwY0r7w=";
@@ -228,13 +226,6 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" (
         if stdenv.hostPlatform.isDarwin then "STDThread" else "TBB"
       ))
-    ]
-    ++ lib.optionals preferGLES [
-      (lib.cmakeBool "VTK_OPENGL_USE_GLES" preferGLES)
-      # gl code incompatible with gles 3.0
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_RenderingExternal" "NO")
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_RenderingLICOpenGL2" "NO")
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_RenderingVR" "NO")
     ]
     ++ lib.optionals enablePython [
       (lib.cmakeBool "VTK_WRAP_PYTHON" true)
