@@ -231,6 +231,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_WRAP_PYTHON" true)
       (lib.cmakeBool "VTK_BUILD_PYI_FILES" true)
       (lib.cmakeFeature "VTK_PYTHON_VERSION" "3")
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_WebPython" "YES")
     ]
     ++ lib.optionals finalAttrs.finalPackage.doCheck [
       (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
