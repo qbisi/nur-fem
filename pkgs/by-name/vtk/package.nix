@@ -236,10 +236,6 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
     ];
 
-  # The VTK package on the nix-darwin platform is not fully tested or supported with high priority.
-  # So we skip checks for Darwin. Contributions to improve support on Darwin are welcome!
-  doCheck = stdenv.hostPlatform.isLinux;
-
   env = {
     QML2_IMPORT_PATH = "${lib.getBin vtkPackages.qtdeclarative}/${vtkPackages.qtbase.qtQmlPrefix}";
   };
@@ -256,6 +252,9 @@ stdenv.mkDerivation (finalAttrs: {
     nixGLMesaHook
     headlessDisplayCheckHook
   ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
+
+  # Test results may vary across platforms; we primarily support x86_64-linux
+  doCheck = stdenv.hostPlatform.isx86_64 && stdenv.hostPlatform.isLinux;
 
   disabledTests = [
     # flaky tests
@@ -296,7 +295,10 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Open source libraries for 3D computer graphics, image processing and visualization";
     homepage = "https://www.vtk.org/";
     license = lib.licenses.bsd3;
-    maintainers = with lib.maintainers; [ qbisi ];
+    maintainers = with lib.maintainers; [
+      tfmoraes
+      qbisi
+    ];
     platforms = lib.platforms.unix;
   };
 })
