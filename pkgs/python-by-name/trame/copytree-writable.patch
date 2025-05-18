@@ -1,0 +1,20 @@
+diff --git a/trame/tools/www.py b/trame/tools/www.py
+index 14cb5806..f1befd9d 100644
+--- a/trame/tools/www.py
++++ b/trame/tools/www.py
+@@ -6,6 +6,7 @@ content that needs to be served for a trame application to work.
+ import argparse
+ import importlib
+ import shutil
++import os
+ from pathlib import Path
+ 
+ 
+@@ -78,6 +79,7 @@ class StaticContentGenerator:
+ 
+         for sub_path, src_dir in self.serve.items():
+             dst_dir = Path(output_directory) / sub_path
++            os.chmod(Path(dst_dir).parent, 0o755)
+             shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+ 
+ 

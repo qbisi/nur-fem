@@ -23,6 +23,11 @@ buildPythonPackage rec {
     hash = "sha256-Mhr4mlXv5L5npWak0M3P2BVgkwsFTakvaOPG9D19qec=";
   };
 
+
+  patches = [
+    ./copytree-writable.patch
+  ];
+
   postPatch = ''
     sed -i '/^\[tool\.setuptools\.packages\.find\]/a include = ["trame*"]' pyproject.toml
   '';
