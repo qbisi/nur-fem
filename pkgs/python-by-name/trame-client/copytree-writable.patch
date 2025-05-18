@@ -1,0 +1,12 @@
+diff --git a/trame_client/ui/core.py b/trame_client/ui/core.py
+index 99036bf..a793788 100644
+--- a/trame_client/ui/core.py
++++ b/trame_client/ui/core.py
+@@ -73,6 +73,7 @@ def iframe_url_builder_jupyter_extension(layout):
+             shutil.copytree(server._www, str(server_www.resolve()), dirs_exist_ok=True)
+             for sub_path, src_dir in server.serve.items():
+                 dst_dir = server_www / sub_path
++                os.chmod(Path(dst_dir).parent, 0o755)
+                 shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+ 
+     return {

@@ -24,6 +24,8 @@ buildPythonPackage rec {
 
   nativeBuildInputs = [ nodejs ];
 
+  patches = [ ./copytree-writable.patch ];
+
   env.npmDeps_vue2_app = fetchNpmDeps {
     name = "npm-deps-vue2-app";
     src = "${src}/vue2-app";
