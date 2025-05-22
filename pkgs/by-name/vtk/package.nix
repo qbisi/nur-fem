@@ -1,14 +1,16 @@
 {
   lib,
+  newScope,
   stdenv,
   fetchurl,
   fetchpatch2,
   cmake,
+  mpi,
   python3Packages,
 
-  # buildInputs
-  mpi,
+  # headers used by vtk and downstream packages
   fmt,
+  cli11,
   eigen,
   exprtk,
   utf8cpp,
@@ -37,15 +39,17 @@
   libtheora,
   hdf5,
   netcdf,
-  adios2,
   opencascade-occt,
 
   # threading
-  tbb_2022_0,
+  tbb,
 
   # rendering
   freetype,
+  fontconfig,
   libX11,
+  libXfixes,
+  libXrender,
   libXcursor,
   gl2ps,
   libGL,
@@ -53,60 +57,47 @@
   qt6,
 
   # check
-  cli11,
   ctestCheckHook,
-  nixGLMesaHook,
+  headlessDisplayHook,
   mpiCheckPhaseHook,
-  headlessDisplayCheckHook,
 
   # custom options
-  mpiSupport ? true,
-  qtVersion ? 6,
+  withQt5 ? false,
+  withQt6 ? false,
+  mpiSupport ? false,
   enablePython ? false,
 }:
-
 let
-  qtPackages =
-    if (qtVersion == 6) then
-      qt6
-    else if (qtVersion == 5) then
-      qt5
-    else
-      throw "qtVersion must be either 5 or 6";
-  vtkPackages = qtPackages.overrideScope (
-    final: prev: {
-      inherit
-        mpi
-        mpiSupport
-        enablePython
-        python3Packages
-        ;
-      python3 = python3Packages.python;
-      pythonSupport = enablePython;
+  vtkPackages = lib.makeScope newScope (self: {
+    inherit
+      mpi
+      mpiSupport
+      ;
 
-      hdf5 = hdf5.override {
-        inherit mpi mpiSupport;
-        cppSupport = !mpiSupport;
-      };
-      netcdf = final.callPackage netcdf.override { };
-      adios2 = final.callPackage adios2.override { };
-    }
-  );
+    hdf5 = hdf5.override {
+      inherit mpi mpiSupport;
+      cppSupport = !mpiSupport;
+    };
+    netcdf = self.callPackage netcdf.override { };
+  });
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "vtk";
   version = "9.4.2";
 
-  srcs = [
-    (fetchurl {
-      url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTK-${finalAttrs.version}.tar.gz";
-      hash = "sha256-NsmODalrsSow/lNwgJeqlJLntm1cOzZuHI3CUeKFagI=";
-    })
-    (fetchurl {
-      url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTKData-${finalAttrs.version}.tar.gz";
-      hash = "sha256-Hgqj32POOXXSnutmmF/DczMIJPkMKZG+UpUa0qgkGxE=";
-    })
-  ];
+  srcs =
+    [
+      (fetchurl {
+        url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTK-${finalAttrs.version}.tar.gz";
+        hash = "sha256-NsmODalrsSow/lNwgJeqlJLntm1cOzZuHI3CUeKFagI=";
+      })
+    ]
+    ++ lib.optionals finalAttrs.finalPackage.doCheck [
+      (fetchurl {
+        url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTKData-${finalAttrs.version}.tar.gz";
+        hash = "sha256-Hgqj32POOXXSnutmmF/DczMIJPkMKZG+UpUa0qgkGxE=";
+      })
+    ];
 
   patches = [
     (fetchpatch2 {
@@ -117,10 +108,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   postPatch =
     ''
-      substituteInPlace GUISupport/QtQuick/Testing/Cxx/CMakeLists.txt \
-        --replace-fail \
-        ''\'''${VTK_QML_DIR}' \
-        ''\'''$ENV{QML2_IMPORT_PATH}:''${VTK_QML_DIR}'
+      substituteInPlace Filters/Sources/Testing/Cxx/TestHyperTreeGridSourceDistributed.cxx \
+        --replace-fail "<char, NbTrees>" "<signed char, NbTrees>"
     ''
     # While char_traits<uint8_t> is not officially supported by any C++
     # standard, gcc and libcxx(<19) have extensions to support the type. The
@@ -139,9 +128,17 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [ cmake ] ++ lib.optional enablePython python3Packages.python;
 
-  buildInputs =
+  buildInputs = [
+    ffmpeg
+    opencascade-occt
+  ];
+
+  # propagated by VTK-vtk-module-find-packages.cmake
+  propagatedBuildInputs =
     [
+      # headers used by vtk and downstream packages
       fmt
+      cli11
       eigen
       exprtk
       utf8cpp
@@ -159,7 +156,6 @@ stdenv.mkDerivation (finalAttrs: {
       libxml2
 
       # io modules
-      ffmpeg
       libjpeg
       libpng
       libtiff
@@ -170,23 +166,30 @@ stdenv.mkDerivation (finalAttrs: {
       libtheora
       vtkPackages.hdf5
       vtkPackages.netcdf
-      vtkPackages.adios2
-      opencascade-occt
 
       # rendering
       freetype
-      vtkPackages.qttools
-      vtkPackages.qtdeclarative
+      fontconfig
     ]
-    ++ lib.optional mpiSupport mpi
-    ++ lib.optional stdenv.hostPlatform.isLinux tbb_2022_0;
-
-  propagatedBuildInputs =
-    lib.optionals stdenv.hostPlatform.isLinux [
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
       libX11
+      libXfixes
+      libXrender
       libXcursor
       gl2ps
       libGL
+      tbb
+    ]
+    ++ lib.optionals mpiSupport [
+      mpi
+    ]
+    ++ lib.optionals withQt5 [
+      qt5.qttools
+      qt5.qtdeclarative
+    ]
+    ++ lib.optionals withQt6 [
+      qt6.qttools
+      qt6.qtdeclarative
     ]
     # create meta package providing dist-info for python3Pacakges.vtk that common cmake build does not do
     ++ lib.optionals enablePython [
@@ -195,6 +198,7 @@ stdenv.mkDerivation (finalAttrs: {
         dependencies =
           with python3Packages;
           [
+            wslink
             numpy
             matplotlib
           ]
@@ -202,9 +206,14 @@ stdenv.mkDerivation (finalAttrs: {
       })
     ];
 
+  # wrapper script calls qmlplugindump, crashes due to lack of minimal platform plugin
+  # Could not find the Qt platform plugin "minimal" in ""
+  preConfigure = lib.optionalString withQt5 ''
+    export QT_PLUGIN_PATH=${lib.getBin qt5.qtbase}/${qt5.qtbase.qtPluginPrefix}
+  '';
+
   cmakeFlags =
     [
-      "-Wno-dev"
       (lib.cmakeBool "VTK_VERSIONED_INSTALL" false)
       (lib.cmakeBool "VTK_USE_MPI" mpiSupport)
       (lib.cmakeBool "VTK_USE_EXTERNAL" true)
@@ -213,19 +222,24 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_cgns" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_ioss" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_token" false) # missing in nixpkgs
-      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" (!stdenv.hostPlatform.isDarwin)) # External gl2ps causes failure linking to macOS OpenGL.framework
+      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_xdmf2" false) # missing in nixpkgs
+      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_xdmf3" false) # missing in nixpkgs
+      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" stdenv.hostPlatform.isLinux) # External gl2ps causes failure linking to macOS OpenGL.framework
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOCCT" "YES")
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOADIOS2" "YES")
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOFFMPEG" "YES")
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf2" "YES")
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf3" "YES")
       (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
       (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
-      (lib.cmakeFeature "VTK_GROUP_ENABLE_Qt" "YES")
-      (lib.cmakeFeature "VTK_QT_VERSION" (toString qtVersion))
       # `VTK_SMP_IMPLEMENTATION_TYPE` can be used to select one of Sequential, OpenMP, TBB, and STDThread.
       (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" (
-        if stdenv.hostPlatform.isDarwin then "STDThread" else "TBB"
+        if stdenv.hostPlatform.isLinux then "TBB" else "STDThread"
       ))
+    ]
+    ++ lib.optionals (withQt6 || withQt5) [
+      (lib.cmakeFeature "VTK_GROUP_ENABLE_Qt" "YES")
+      (lib.cmakeFeature "VTK_QT_VERSION" "Auto") # will search for Qt6 first
     ]
     ++ lib.optionals enablePython [
       (lib.cmakeBool "VTK_WRAP_PYTHON" true)
@@ -237,21 +251,23 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
     ];
 
-  env = {
-    QML2_IMPORT_PATH = "${lib.getBin vtkPackages.qtdeclarative}/${vtkPackages.qtbase.qtQmlPrefix}";
-  };
+  preCheck =
+    lib.optionalString withQt5 ''
+      export QML2_IMPORT_PATH=${lib.getBin qt5.qtdeclarative}/${qt5.qtbase.qtQmlPrefix}
+    ''
+    + lib.optionalString withQt6 ''
+      export QML2_IMPORT_PATH=${lib.getBin qt6.qtdeclarative}/${qt6.qtbase.qtQmlPrefix}
+    ''
+    # libvtkglad.so will find and load libGL.so at runtime.
+    + lib.optionalString stdenv.hostPlatform.isLinux ''
+      patchelf --add-rpath ${lib.getLib libGL}/lib lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
+    '';
 
-  preCheck = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
-    patchelf --add-rpath ${lib.getLib libGL}/lib lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
-  '';
-
-  __darwinAllowLocalNetworking = finalAttrs.finalPackage.doCheck;
+  __darwinAllowLocalNetworking = finalAttrs.finalPackage.doCheck && mpiSupport;
 
   nativeCheckInputs = [
-    cli11
     ctestCheckHook
-    nixGLMesaHook
-    headlessDisplayCheckHook
+    headlessDisplayHook
   ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
 
   # Test results may vary across platforms; we primarily support x86_64-linux
@@ -279,13 +295,19 @@ stdenv.mkDerivation (finalAttrs: {
 
   dontWrapQtApps = true;
 
-  postFixup = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
-    patchelf --add-rpath ${lib.getLib libGL}/lib $out/lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
-  '';
+  postFixup =
+    # Remove thirdparty find module that have been provided in nixpkgs
+    ''
+      rm -rf $out/lib/cmake/vtk/patches
+      rm $out/lib/cmake/vtk/Find{double-conversion,EXPAT,Freetype,utf8cpp,LibXml2,FontConfig}.cmake
+    ''
+    # add rpath again as the rpath will be stripped in fixupPhase.
+    + lib.optionalString stdenv.hostPlatform.isLinux ''
+      patchelf --add-rpath ${lib.getLib libGL}/lib $out/lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
+    '';
 
   passthru = {
     inherit
-      qtVersion
       enablePython
       mpiSupport
       vtkPackages
