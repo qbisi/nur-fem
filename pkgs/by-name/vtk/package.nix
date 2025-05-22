@@ -10,6 +10,7 @@
 
   # headers used by vtk and downstream packages
   fmt,
+  boost,
   cli11,
   eigen,
   exprtk,
@@ -129,6 +130,7 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [ cmake ] ++ lib.optional enablePython python3Packages.python;
 
   buildInputs = [
+    boost
     ffmpeg
     opencascade-occt
   ];
