@@ -19,7 +19,7 @@
   pytest-cov,
   nixGLMesaHook,
   pytestCheckHook,
-  headlessDisplayCheckHook,
+  headlessDisplayHook,
   writableTmpDirAsHomeHook,
 }:
 
@@ -70,7 +70,7 @@ buildPythonPackage rec {
     pytest-cov
     nixGLMesaHook
     pytestCheckHook
-    headlessDisplayCheckHook
+    headlessDisplayHook
     writableTmpDirAsHomeHook
   ];
 
