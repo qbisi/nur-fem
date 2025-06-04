@@ -35,6 +35,12 @@ buildPythonPackage rec {
     hash = "sha256-ruhG9HsD1PzTs/S6IDtuqIxg7UBmn67Ne2Y/H8y/9Cs=";
   };
 
+  postPatch = ''
+    substituteInPlace pyvista/core/utilities/reader.py \
+      --replace-fail 'vtkIOXdmf2' 'vtkIOXdmf3' \
+      --replace-fail 'vtkXdmfReader' 'vtkXdmf3Reader' \
+  '';
+
   build-system = [ setuptools ];
 
   dependencies = [
