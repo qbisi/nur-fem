@@ -7,6 +7,7 @@
   pyvista,
   pyvistaqt,
   pytestCheckHook,
+  writableTmpDirAsHomeHook,
 }:
 
 buildPythonPackage rec {
@@ -33,6 +34,7 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     pytestCheckHook
+    writableTmpDirAsHomeHook
   ];
 
   meta = {
