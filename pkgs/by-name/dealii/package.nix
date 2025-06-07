@@ -9,6 +9,7 @@
   petsc,
   slepc,
   zlib,
+  perl,
   # custom options
   mpiSupport ? true,
   sse2Support ? stdenv.hostPlatform.isx86,
@@ -79,6 +80,10 @@ stdenv.mkDerivation (finalAttrs: {
   ] ++ lib.optional mpiSupport mpi;
 
   doCheck = true;
+
+  nativeCheckInputs = [
+    perl
+  ];
 
   meta = {
     description = "Finite Element Differential Equations Analysis Library";
