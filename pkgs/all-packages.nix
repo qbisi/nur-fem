@@ -68,7 +68,6 @@
           adios2 = prev.toPythonModule (
             final.pkgs.adios2.override {
               pythonSupport = true;
-              python3 = prev.python;
               python3Packages = final;
             }
           );

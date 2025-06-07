@@ -6,18 +6,18 @@
   fetchpatch2,
   cmake,
   mpi,
+  fmt,
+  verdict,
+  double-conversion,
   python3Packages,
 
   # headers used by vtk and downstream packages
-  fmt,
   boost,
   cli11,
   eigen,
   exprtk,
   utf8cpp,
-  verdict,
   nlohmann_json,
-  double-conversion,
 
   # common data libraries
   lz4,
@@ -130,7 +130,6 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [ cmake ] ++ lib.optional enablePython python3Packages.python;
 
   buildInputs = [
-    boost
     ffmpeg
     opencascade-occt
   ];
@@ -138,15 +137,17 @@ stdenv.mkDerivation (finalAttrs: {
   # propagated by VTK-vtk-module-find-packages.cmake
   propagatedBuildInputs =
     [
-      # headers used by vtk and downstream packages
       fmt
+      boost
+      verdict
+      double-conversion
+
+      # headers used by vtk and downstream packages
       cli11
       eigen
       exprtk
       utf8cpp
-      verdict
       nlohmann_json
-      double-conversion
 
       # common data libraries
       lz4
@@ -281,13 +282,13 @@ stdenv.mkDerivation (finalAttrs: {
     "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderItemWidget"
     "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderWindow"
     "VTK::InteractionWidgetsPython-TestTensorWidget2"
-    "VTK::FiltersCellGridCxx-TestCellGridEvaluator"
+    "VTK::RenderingOpenGL2Cxx-TestGlyph3DMapperPickability"
     # caught SIGSEGV/SIGTERM in mpiexec
     "VTK::FiltersParallelCxx-MPI-DistributedData"
     "VTK::FiltersParallelCxx-MPI-DistributedDataRenderPass"
-    # vtkShaderProgram.cxx:1145   ERR| vtkShaderProgram (0x1375050): Could not create shader object.
-    "VTK::RenderingOpenGL2Cxx-TestFluidMapper"
-    "VTK::RenderingOpenGL2Cxx-TestGlyph3DMapperPickability"
+    # caught SIGSEGV in _XFlush(libX11.so)
+    "VTK::RenderingCoreCxx-TestCompositePolyDataMapperToggleScalarVisibilities"
+    "VTK::CommonDataModelCxx-quadraticIntersection"
   ];
 
   # byte-compile python modules since the CMake build does not do it

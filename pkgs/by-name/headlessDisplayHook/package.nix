@@ -2,7 +2,7 @@
   lib,
   stdenv,
   makeSetupHook,
-  weston,
+  xvfb,
   fontconfig,
   mesa,
 }:
@@ -10,7 +10,7 @@ if stdenv.hostPlatform.isLinux then
   makeSetupHook {
     name = "headlessDisplayHook";
     propagatedBuildInputs = [
-      weston
+      xvfb
       mesa.llvmpipeHook
     ];
     substitutions = {

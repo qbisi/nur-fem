@@ -12,7 +12,7 @@
   mpi,
   blas,
   lapack,
-  mumps_par,
+  mumps-mpi,
   hypre,
   suitesparse,
   catch2,
@@ -31,7 +31,7 @@ let
   ];
   ngsldFlags = toString [
     "-L${netgen}/lib"
-    "-L${mumps_par}/lib"
+    "-L${mumps-mpi}/lib"
     "-L${suitesparse}/lib"
   ];
   archFlags = toString (
@@ -128,7 +128,7 @@ stdenv.mkDerivation (finalAttrs: {
     blas
     lapack
     hypre
-    mumps_par
+    mumps-mpi
     suitesparse
     mpi
   ];
