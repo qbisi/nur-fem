@@ -73,6 +73,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optionals pythonSupport [
       python3Packages.python
       python3Packages.pybind11
+      python3Packages.pythonImportsCheckHook
     ];
 
   buildInputs =
@@ -175,7 +176,7 @@ stdenv.mkDerivation (finalAttrs: {
     python3Packages.python
     ctestCheckHook
     mpiCheckPhaseHook
-  ] ++ lib.optional pythonSupport python3Packages.pythonImportsCheckHook;
+  ];
 
   disabledTests = lib.optionals stdenv.hostPlatform.isDarwin [
     # TypeError: cannot pickle 'TextIOWrapper' instances
