@@ -36,7 +36,7 @@ buildPythonPackage rec {
   meta = {
     description = "Vuetify widgets for trame";
     homepage = "https://github.com/Kitware/trame-vuetify";
-    changelog = "https://github.com/Kitware/trame-vuetify/releases/tag/${src.tag}";
+    changelog = "https://github.com/Kitware/trame-vuetify/releases/tag/v${version}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ qbisi ];
   };

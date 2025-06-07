@@ -38,7 +38,7 @@ buildPythonPackage rec {
   meta = {
     description = "JupyterLab extension for trame communication layer";
     homepage = "https://github.com/Kitware/trame-jupyter-extension";
-    changelog = "https://github.com/Kitware/trame-jupyter-extension/releases/tag/${src.tag}";
+    changelog = "https://github.com/Kitware/trame-jupyter-extension/releases/tag/v${version}";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ qbisi ];
   };

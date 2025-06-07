@@ -37,7 +37,7 @@ buildPythonPackage rec {
   meta = {
     description = "VTK widgets for trame";
     homepage = "https://github.com/Kitware/trame-vtk";
-    changelog = "https://github.com/Kitware/trame-vtk/releases/tag/${src.tag}";
+    changelog = "https://github.com/Kitware/trame-vtk/releases/tag/v${version}";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ qbisi ];
   };

@@ -48,7 +48,7 @@ buildPythonPackage rec {
   meta = {
     description = "Jupyter server extension to run additional processes and proxy to them that comes bundled JupyterLab extension to launch pre-defined processes";
     homepage = "https://github.com/jupyterhub/jupyter-server-proxy";
-    changelog = "https://github.com/jupyterhub/jupyter-server-proxy/releases/tag/${src.tag}";
+    changelog = "https://github.com/jupyterhub/jupyter-server-proxy/releases/tag/v${version}";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ qbisi ];
   };
