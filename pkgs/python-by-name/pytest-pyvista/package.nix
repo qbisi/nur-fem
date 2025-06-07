@@ -1,12 +1,13 @@
 {
   lib,
+  stdenv,
   buildPythonPackage,
   fetchFromGitHub,
   flit-core,
   pytest,
   pyvista,
-  nixGLMesaHook,
   pytestCheckHook,
+  headlessDisplayHook,
 }:
 
 buildPythonPackage rec {
@@ -25,15 +26,20 @@ buildPythonPackage rec {
 
   dependencies = [
     pytest
+    pyvista
   ];
 
-  pythonImportsCheck = [ "pytest_pyvista" ];
+  doCheck = stdenv.hostPlatform.isLinux;
 
   nativeCheckInputs = [
-    pyvista
-    nixGLMesaHook
     pytestCheckHook
+    headlessDisplayHook
   ];
+
+  # capable of doing onscreen/offscreen plot
+  env.ALLOW_PLOTTING = "true";
+
+  pythonImportsCheck = [ "pytest_pyvista" ];
 
   meta = {
     description = "Plugin to test PyVista plot outputs";

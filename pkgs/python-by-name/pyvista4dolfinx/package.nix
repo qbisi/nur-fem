@@ -7,6 +7,7 @@
   pyvista,
   pyvistaqt,
   pytestCheckHook,
+  headlessDisplayHook,
   writableTmpDirAsHomeHook,
 }:
 
@@ -34,8 +35,11 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     pytestCheckHook
+    headlessDisplayHook
     writableTmpDirAsHomeHook
   ];
+
+  env.ALLOW_PLOTTING = "true";
 
   meta = {
     description = "Re-introduction of a simple plot function for Dolfinx";

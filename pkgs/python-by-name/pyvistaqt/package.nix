@@ -17,9 +17,8 @@
   pytest,
   pytest-qt,
   pytest-cov,
-  nixGLMesaHook,
   pytestCheckHook,
-  headlessDisplayHook,
+  headlessDisplayHook2,
   writableTmpDirAsHomeHook,
 }:
 
@@ -53,7 +52,6 @@ buildPythonPackage rec {
 
   doCheck = !stdenv.hostPlatform.isDarwin;
 
-  # possible error with xvfb backend
   disabledTests = [
     "test_mouse_interactions"
   ];
@@ -62,14 +60,13 @@ buildPythonPackage rec {
     pyqt6
     pytest-qt
     pytest-cov
-    nixGLMesaHook
     pytestCheckHook
-    headlessDisplayHook
+    headlessDisplayHook2
     writableTmpDirAsHomeHook
   ];
 
   # capable of doing onscreen/offscreen plot
-  env.ALLOW_PLOTTING = "false";
+  env.ALLOW_PLOTTING = "true";
 
   meta = {
     homepage = "http://qtdocs.pyvista.org/";

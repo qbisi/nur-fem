@@ -40,9 +40,6 @@ buildPythonPackage rec {
     substituteInPlace pyvista/core/utilities/reader.py \
       --replace-fail 'vtkIOXdmf2' 'vtkIOXdmf3' \
       --replace-fail 'vtkXdmfReader' 'vtkXdmf3Reader' \
-    
-    substituteInPlace pyvista/plotting/tools.py \
-      --replace-fail 'pgrep' '${lib.getExe' procps "pgrep"}'
   '';
 
   build-system = [ setuptools ];
