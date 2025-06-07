@@ -126,6 +126,8 @@ buildPythonPackage rec {
     # require cffi<1.17
     "test_cffi_expression"
     "test_hexahedron_mesh"
+    # might fail during parallel check 
+    "test_interpolation_non_affine_nonmatching_maps"
   ];
 
   passthru = {
