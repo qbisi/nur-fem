@@ -4,7 +4,6 @@
   stdenv,
   buildPythonPackage,
   fetchFromGitHub,
-  fetchpatch2,
   python,
   pax-utils,
 
