@@ -366,7 +366,6 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://www.vtk.org/";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [
-      tfmoraes
       qbisi
     ];
     platforms = lib.platforms.unix;
