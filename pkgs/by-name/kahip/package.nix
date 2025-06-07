@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchpatch2,
   cmake,
   mpi,
   metis,
@@ -19,6 +20,13 @@ stdenv.mkDerivation (finalAttrs: {
     tag = "v${finalAttrs.version}";
     hash = "sha256-PySbhryPSqr2fzInYPaNQzy4MBuinJ4XJ38zxAa0lCE=";
   };
+
+  patches = [
+    (fetchpatch2 {
+      url = "https://github.com/KaHIP/KaHIP/pull/158/commits/1bc4a3f32b9c31840d23c513e541537b48422e98.patch?full_index=1";
+      hash = "sha256-gcc3wVedBose8Dnm5VnH6U7Unz3MxG0YWuuBchiBFCY=";
+    })
+  ];
 
   nativeBuildInputs =
     [ cmake ]
