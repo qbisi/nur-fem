@@ -10,6 +10,7 @@
   slepc,
   zlib,
   perl,
+  mpiCheckPhaseHook,
   # custom options
   mpiSupport ? true,
   sse2Support ? stdenv.hostPlatform.isx86,
@@ -81,9 +82,11 @@ stdenv.mkDerivation (finalAttrs: {
 
   doCheck = true;
 
+  __darwinAllowLocalNetworking = mpiSupport;
+
   nativeCheckInputs = [
     perl
-  ];
+  ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
 
   meta = {
     description = "Finite Element Differential Equations Analysis Library";
