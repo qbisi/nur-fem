@@ -5,6 +5,7 @@
   fetchurl,
   fetchpatch2,
   cmake,
+  pkg-config,
   mpi,
   fmt,
   verdict,
@@ -29,6 +30,17 @@
   libxml2,
 
   # io modules
+  adios2,
+  libLAS,
+  gdal,
+  pdal,
+  alembic,
+  imath,
+  openvdb,
+  c-blosc,
+  unixODBC,
+  postgresql,
+  libmysqlclient,
   ffmpeg,
   libjpeg,
   libpng,
@@ -66,13 +78,15 @@
   withQt5 ? false,
   withQt6 ? false,
   mpiSupport ? false,
-  enablePython ? false,
+  pythonSupport ? false,
 }:
 let
   vtkPackages = lib.makeScope newScope (self: {
     inherit
       mpi
       mpiSupport
+      python3Packages
+      pythonSupport
       ;
 
     hdf5 = hdf5.override {
@@ -80,6 +94,7 @@ let
       cppSupport = !mpiSupport;
     };
     netcdf = self.callPackage netcdf.override { };
+    adios2 = self.callPackage adios2.override { };
   });
 in
 stdenv.mkDerivation (finalAttrs: {
@@ -127,11 +142,25 @@ stdenv.mkDerivation (finalAttrs: {
       echo "vtk_module_set_properties(VTK::FiltersExtraction CXX_STANDARD 20)" >> Filters/Extraction/CMakeLists.txt
     '';
 
-  nativeBuildInputs = [ cmake ] ++ lib.optional enablePython python3Packages.python;
+  nativeBuildInputs = [
+    cmake
+    pkg-config # required for finding MySQl
+  ] ++ lib.optional pythonSupport python3Packages.python;
 
   buildInputs = [
+    libLAS
+    gdal
+    pdal
+    alembic
+    imath # should be propagated by alembic
+    openvdb
+    c-blosc # should be propagated by openvdb
+    unixODBC
+    postgresql
+    libmysqlclient
     ffmpeg
     opencascade-occt
+    vtkPackages.adios2
   ];
 
   # propagated by VTK-vtk-module-find-packages.cmake
@@ -195,7 +224,7 @@ stdenv.mkDerivation (finalAttrs: {
       qt6.qtdeclarative
     ]
     # create meta package providing dist-info for python3Pacakges.vtk that common cmake build does not do
-    ++ lib.optionals enablePython [
+    ++ lib.optionals pythonSupport [
       (python3Packages.mkPythonMetaPackage {
         inherit (finalAttrs) pname version meta;
         dependencies =
@@ -228,10 +257,25 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_xdmf2" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_xdmf3" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" stdenv.hostPlatform.isLinux) # External gl2ps causes failure linking to macOS OpenGL.framework
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOCCT" "YES")
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOFFMPEG" "YES")
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf2" "YES")
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf3" "YES")
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOADIOS2" "YES") # adios2
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_fides" "YES") # adios2
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOLAS" "YES") # libLAS
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_GeovisGDAL" "YES") # gdal
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOGDAL" "YES") # gdal
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOPDAL" "YES") # pdal
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOAlembic" "YES") # alembic
+      (lib.cmakeFeature "CMAKE_MODULE_PATH" "${lib.getDev openvdb}/lib/cmake/OpenVDB") # provide FindOpenVDB.cmake
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOpenVDB" "YES") # openvdb
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOODBC" "YES") # unixodbc
+      (lib.cmakeFeature "PostgreSQL_ROOT" "${lib.getDev postgresql};${lib.getLib postgresql}") # postgresql
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOPostgreSQL" "YES") # postgresql
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMySQL" "YES") # mariadb
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOCATALYST" "NO") # catalyst, missing in nixpkgs
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOCCT" "YES") # opencascade-occt
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOFFMPEG" "YES") # ffmpeg
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMotionFX" "YES") # builtin
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf2" "YES") # builtin
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf3" "YES") # builtin
       (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
       (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
@@ -244,7 +288,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "VTK_GROUP_ENABLE_Qt" "YES")
       (lib.cmakeFeature "VTK_QT_VERSION" "Auto") # will search for Qt6 first
     ]
-    ++ lib.optionals enablePython [
+    ++ lib.optionals pythonSupport [
       (lib.cmakeBool "VTK_WRAP_PYTHON" true)
       (lib.cmakeBool "VTK_BUILD_PYI_FILES" true)
       (lib.cmakeFeature "VTK_PYTHON_VERSION" "3")
@@ -292,7 +336,7 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   # byte-compile python modules since the CMake build does not do it
-  postInstall = lib.optionalString enablePython ''
+  postInstall = lib.optionalString pythonSupport ''
     python -m compileall -s $out $out/${python3Packages.python.sitePackages}
   '';
 
@@ -311,7 +355,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru = {
     inherit
-      enablePython
+      pythonSupport
       mpiSupport
       vtkPackages
       ;

@@ -74,7 +74,7 @@
 
           vtk = prev.toPythonModule (
             final.pkgs.vtk.override {
-              enablePython = true;
+              pythonSupport = true;
               python3Packages = final;
             }
           );
