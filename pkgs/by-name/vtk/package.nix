@@ -2,23 +2,21 @@
   lib,
   newScope,
   stdenv,
+  llvmPackages_18,
   fetchurl,
   fetchpatch2,
   cmake,
   pkg-config,
+
+  # common dependencies
   mpi,
+  python3Packages,
   fmt,
+  boost,
+  eigen,
+  cli11,
   verdict,
   double-conversion,
-  python3Packages,
-
-  # headers used by vtk and downstream packages
-  boost,
-  cli11,
-  eigen,
-  exprtk,
-  utf8cpp,
-  nlohmann_json,
 
   # common data libraries
   lz4,
@@ -28,6 +26,9 @@
   expat,
   jsoncpp,
   libxml2,
+  exprtk,
+  utf8cpp,
+  nlohmann_json,
 
   # io modules
   adios2,
@@ -77,12 +78,19 @@
   # custom options
   withQt5 ? false,
   withQt6 ? false,
+  # To avoid conflicts between the propagated vtkPackages.hdf5
+  # and the input hdf5 used by most downstream packages,
+  # we set mpiSupport to false by default.
   mpiSupport ? false,
   pythonSupport ? false,
+
+  # passthru.tests
+  testers,
 }:
 let
   vtkPackages = lib.makeScope newScope (self: {
     inherit
+      tbb
       mpi
       mpiSupport
       python3Packages
@@ -93,11 +101,19 @@ let
       inherit mpi mpiSupport;
       cppSupport = !mpiSupport;
     };
+    openvdb = self.callPackage openvdb.override { };
     netcdf = self.callPackage netcdf.override { };
     adios2 = self.callPackage adios2.override { };
   });
+  # While char_traits<uint8_t> is not officially supported by any C++
+  # standard, gcc and libcxx(<19) have extensions to support the type. The
+  # C++20 standard introduces support for char_traits<char8_t>.
+  # Starting with libcxx-19, the extensions to support char_traits<T> where
+  # T is not a type specified by a C++ standard has been dropped. See
+  # https://reviews.llvm.org/D138307 for details.
+  buildStdenv = if stdenv.cc.isClang then llvmPackages_18.stdenv else stdenv;
 in
-stdenv.mkDerivation (finalAttrs: {
+buildStdenv.mkDerivation (finalAttrs: {
   pname = "vtk";
   version = "9.4.2";
 
@@ -122,25 +138,10 @@ stdenv.mkDerivation (finalAttrs: {
     })
   ];
 
-  postPatch =
-    ''
-      substituteInPlace Filters/Sources/Testing/Cxx/TestHyperTreeGridSourceDistributed.cxx \
-        --replace-fail "<char, NbTrees>" "<signed char, NbTrees>"
-    ''
-    # While char_traits<uint8_t> is not officially supported by any C++
-    # standard, gcc and libcxx(<19) have extensions to support the type. The
-    # C++20 standard introduces support for char_traits<char8_t>.
-    # Starting with libcxx-19, the extensions to support char_traits<T> where
-    # T is not a type specified by a C++ standard has been dropped. See
-    # https://reviews.llvm.org/D138307 for details.
-    + lib.optionalString stdenv.cc.isClang ''
-      substituteInPlace IO/Geometry/vtkGLTFDocumentLoaderInternals.cxx \
-        --replace-fail "return value == extensionUsedByModel;" "return value == extensionUsedByModel.get<std::string>();" \
-        --replace-fail "return value == extensionRequiredByModel;" "return value == extensionRequiredByModel.get<std::string>();"
-
-      echo "vtk_module_set_properties(VTK::ParallelDIY CXX_STANDARD 20)" >> Parallel/DIY/CMakeLists.txt
-      echo "vtk_module_set_properties(VTK::FiltersExtraction CXX_STANDARD 20)" >> Filters/Extraction/CMakeLists.txt
-    '';
+  postPatch = ''
+    substituteInPlace Filters/Sources/Testing/Cxx/TestHyperTreeGridSourceDistributed.cxx \
+      --replace-fail "<char, NbTrees>" "<signed char, NbTrees>"
+  '';
 
   nativeBuildInputs = [
     cmake
@@ -153,41 +154,38 @@ stdenv.mkDerivation (finalAttrs: {
     pdal
     alembic
     imath # should be propagated by alembic
-    openvdb
+    vtkPackages.openvdb
     c-blosc # should be propagated by openvdb
+    tbb # should be propagated by openvdb
     unixODBC
     postgresql
     libmysqlclient
     ffmpeg
     opencascade-occt
-    vtkPackages.adios2
-  ];
+    cli11
+    fontconfig
+    libGL
+  ] ++ lib.optional mpiSupport mpi;
 
-  # propagated by VTK-vtk-module-find-packages.cmake
+  # propagated by vtk-config.cmake
   propagatedBuildInputs =
     [
       fmt
+      eigen
       boost
       verdict
       double-conversion
-
-      # headers used by vtk and downstream packages
-      cli11
-      eigen
-      exprtk
-      utf8cpp
-      nlohmann_json
-
-      # common data libraries
+      freetype
       lz4
       xz
       zlib
-      pugixml
       expat
+      exprtk
+      pugixml
       jsoncpp
       libxml2
-
-      # io modules
+      utf8cpp
+      nlohmann_json
       libjpeg
       libpng
       libtiff
@@ -197,23 +195,13 @@ stdenv.mkDerivation (finalAttrs: {
       libharu
       libtheora
       vtkPackages.hdf5
+      vtkPackages.adios2
       vtkPackages.netcdf
-
-      # rendering
-      freetype
-      fontconfig
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
-      libX11
-      libXfixes
-      libXrender
-      libXcursor
-      gl2ps
-      libGL
       tbb
-    ]
-    ++ lib.optionals mpiSupport [
-      mpi
+      libX11
+      gl2ps
     ]
     ++ lib.optionals withQt5 [
       qt5.qttools
@@ -257,6 +245,8 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_xdmf2" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_xdmf3" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" stdenv.hostPlatform.isLinux) # External gl2ps causes failure linking to macOS OpenGL.framework
+      (lib.cmakeFeature "CMAKE_MODULE_PATH" "${lib.getDev openvdb}/lib/cmake/OpenVDB") # provide FindOpenVDB.cmake
+      (lib.cmakeFeature "PostgreSQL_ROOT" "${lib.getDev postgresql};${lib.getLib postgresql}") # postgresql
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOADIOS2" "YES") # adios2
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_fides" "YES") # adios2
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOLAS" "YES") # libLAS
@@ -264,22 +254,20 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOGDAL" "YES") # gdal
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOPDAL" "YES") # pdal
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOAlembic" "YES") # alembic
-      (lib.cmakeFeature "CMAKE_MODULE_PATH" "${lib.getDev openvdb}/lib/cmake/OpenVDB") # provide FindOpenVDB.cmake
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOpenVDB" "YES") # openvdb
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOODBC" "YES") # unixodbc
-      (lib.cmakeFeature "PostgreSQL_ROOT" "${lib.getDev postgresql};${lib.getLib postgresql}") # postgresql
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOPostgreSQL" "YES") # postgresql
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMySQL" "YES") # mariadb
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOCATALYST" "NO") # catalyst, missing in nixpkgs
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOCCT" "YES") # opencascade-occt
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOFFMPEG" "YES") # ffmpeg
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMotionFX" "YES") # builtin
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf2" "YES") # builtin
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf3" "YES") # builtin
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf2" "YES") # vendored
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf3" "YES") # vendored
       (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
       (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
-      # `VTK_SMP_IMPLEMENTATION_TYPE` can be used to select one of Sequential, OpenMP, TBB, and STDThread.
+      # `VTK_SMP_IMPLEMENTATION_TYPE` can be one of Sequential, OpenMP, TBB, and STDThread.
       (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" (
         if stdenv.hostPlatform.isLinux then "TBB" else "STDThread"
       ))
@@ -317,8 +305,8 @@ stdenv.mkDerivation (finalAttrs: {
     headlessDisplayHook
   ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
 
-  # Test results may vary across platforms; we primarily support x86_64-linux
-  doCheck = stdenv.hostPlatform.isx86_64 && stdenv.hostPlatform.isLinux;
+  # tests are done in passthru.tests.withCheck
+  doCheck = false;
 
   disabledTests = [
     # flaky tests
@@ -348,7 +336,6 @@ stdenv.mkDerivation (finalAttrs: {
       rm -rf $out/lib/cmake/vtk/patches
       rm $out/lib/cmake/vtk/Find{double-conversion,EXPAT,Freetype,utf8cpp,LibXml2,FontConfig}.cmake
     ''
-    # add rpath again as the rpath will be stripped in fixupPhase.
     + lib.optionalString stdenv.hostPlatform.isLinux ''
       patchelf --add-rpath ${lib.getLib libGL}/lib $out/lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
     '';
@@ -359,15 +346,22 @@ stdenv.mkDerivation (finalAttrs: {
       mpiSupport
       vtkPackages
       ;
+    tests = {
+      cmake-config = testers.hasCmakeConfigModules {
+        moduleNames = [ "VTK" ];
+        package = finalAttrs.finalPackage;
+      };
+      withCheck = finalAttrs.finalPackage.overrideAttrs {
+        doCheck = true;
+      };
+    };
   };
 
   meta = {
     description = "Open source libraries for 3D computer graphics, image processing and visualization";
     homepage = "https://www.vtk.org/";
     license = lib.licenses.bsd3;
-    maintainers = with lib.maintainers; [
-      qbisi
-    ];
+    maintainers = with lib.maintainers; [ qbisi ];
     platforms = lib.platforms.unix;
   };
 })
