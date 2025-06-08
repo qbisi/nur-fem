@@ -99,6 +99,13 @@ let
       pythonSupport
       ;
 
+    qtPackages =
+      if withQt6 then
+        qt6
+      else if withQt5 then
+        qt5
+      else
+        null;
     hdf5 = hdf5.override {
       inherit mpi mpiSupport;
       cppSupport = !mpiSupport;
@@ -296,11 +303,8 @@ buildStdenv.mkDerivation (finalAttrs: {
     ];
 
   preCheck =
-    lib.optionalString withQt5 ''
-      export QML2_IMPORT_PATH=${lib.getBin qt5.qtdeclarative}/${qt5.qtbase.qtQmlPrefix}
-    ''
-    + lib.optionalString withQt6 ''
-      export QML2_IMPORT_PATH=${lib.getBin qt6.qtdeclarative}/${qt6.qtbase.qtQmlPrefix}
+    lib.optionalString (withQt5 || withQt6) ''
+      export QML2_IMPORT_PATH=${lib.getBin vtkPackages.qtPackages.qtdeclarative}/${vtkPackages.qtPackages.qtbase.qtQmlPrefix}
     ''
     # libvtkglad.so will find and load libGL.so at runtime.
     + lib.optionalString stdenv.hostPlatform.isLinux ''
@@ -355,8 +359,14 @@ buildStdenv.mkDerivation (finalAttrs: {
     inherit
       pythonSupport
       mpiSupport
-      vtkPackages
       ;
+
+    vtkPackages = vtkPackages.overrideScope (
+      final: prev: {
+        vtk = finalAttrs.finalPackage;
+      }
+    );
+
     tests = {
       cmake-config = testers.hasCmakeConfigModules {
         moduleNames = [ "VTK" ];
