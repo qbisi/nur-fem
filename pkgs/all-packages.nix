@@ -65,6 +65,13 @@
             }
           );
 
+          kahip = prev.toPythonModule (
+            final.pkgs.kahip.override {
+              pythonSupport = true;
+              python3Packages = final;
+            }
+          );
+
           adios2 = prev.toPythonModule (
             final.pkgs.adios2.override {
               pythonSupport = true;

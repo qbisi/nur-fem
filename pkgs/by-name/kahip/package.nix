@@ -23,8 +23,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     (fetchpatch2 {
-      url = "https://github.com/KaHIP/KaHIP/pull/158/commits/1bc4a3f32b9c31840d23c513e541537b48422e98.patch?full_index=1";
-      hash = "sha256-gcc3wVedBose8Dnm5VnH6U7Unz3MxG0YWuuBchiBFCY=";
+      url = "https://github.com/KaHIP/KaHIP/pull/158/commits/0e12e01657260879fbed52aa131393cf5eb2fb7c.patch?full_index=1";
+      hash = "sha256-JI29l/BnNUYaKKcKx6YcNJ3+nQjxEprsB5igvXrEHpw=";
     })
   ];
 
@@ -43,6 +43,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags = [
     (lib.cmakeBool "64BITMODE" isILP64)
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!stdenv.hostPlatform.isStatic))
     (lib.cmakeBool "BUILDPYTHONMODULE" pythonSupport)
     (lib.cmakeFeature "CMAKE_INSTALL_PYTHONDIR" python3Packages.python.sitePackages)
   ];
