@@ -33,6 +33,8 @@
   # io modules
   adios2,
   libLAS,
+  libgeotiff,
+  laszip_2,
   gdal,
   pdal,
   alembic,
@@ -143,13 +145,20 @@ buildStdenv.mkDerivation (finalAttrs: {
       --replace-fail "<char, NbTrees>" "<signed char, NbTrees>"
   '';
 
-  nativeBuildInputs = [
-    cmake
-    pkg-config # required for finding MySQl
-  ] ++ lib.optional pythonSupport python3Packages.python;
+  nativeBuildInputs =
+    [
+      cmake
+      pkg-config # required for finding MySQl
+    ]
+    ++ lib.optionals pythonSupport [
+      python3Packages.python
+      python3Packages.pythonImportsCheckHook
+    ];
 
   buildInputs = [
     libLAS
+    libgeotiff
+    laszip_2
     gdal
     pdal
     alembic
@@ -327,6 +336,8 @@ buildStdenv.mkDerivation (finalAttrs: {
   postInstall = lib.optionalString pythonSupport ''
     python -m compileall -s $out $out/${python3Packages.python.sitePackages}
   '';
+
+  pythonImportsCheck = [ "vtk" ];
 
   dontWrapQtApps = true;
 
