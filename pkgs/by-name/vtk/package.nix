@@ -14,7 +14,6 @@
   fmt,
   boost,
   eigen,
-  cli11,
   verdict,
   double-conversion,
 
@@ -73,6 +72,7 @@
   qt6,
 
   # check
+  cli11,
   ctestCheckHook,
   headlessDisplayHook,
   mpiCheckPhaseHook,
@@ -145,12 +145,11 @@ buildStdenv.mkDerivation (finalAttrs: {
       url = "https://gitlab.archlinux.org/archlinux/packaging/packages/vtk/-/raw/b4d07bd7ee5917e2c32f7f056cf78472bcf1cec2/netcdf-4.9.3.patch?full_index=1";
       hash = "sha256-h1NVeLuwAj7eUG/WSvrpXN9PtpjFQ/lzXmJncwY0r7w=";
     })
+    (fetchpatch2 {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/46f0c203847bdda7985c0dadcb50157f96cf5aaf.patch?full_index=1";
+      hash = "sha256-kKJKqvSfBpShRkrCa5MdVPoo5iLuoTspDmev3Dz4z4Q=";
+    })
   ];
-
-  postPatch = ''
-    substituteInPlace Filters/Sources/Testing/Cxx/TestHyperTreeGridSourceDistributed.cxx \
-      --replace-fail "<char, NbTrees>" "<signed char, NbTrees>"
-  '';
 
   nativeBuildInputs =
     [
@@ -178,7 +177,6 @@ buildStdenv.mkDerivation (finalAttrs: {
     libmysqlclient
     ffmpeg
     opencascade-occt
-    cli11
     fontconfig
     libGL
   ] ++ lib.optional mpiSupport mpi;
@@ -251,7 +249,6 @@ buildStdenv.mkDerivation (finalAttrs: {
   cmakeFlags =
     [
       (lib.cmakeBool "VTK_VERSIONED_INSTALL" false)
-      (lib.cmakeBool "VTK_USE_MPI" mpiSupport)
       (lib.cmakeBool "VTK_USE_EXTERNAL" true)
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_fast_float" false) # required version incompatible
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_pegtl" false) # required version incompatible
@@ -263,23 +260,21 @@ buildStdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" stdenv.hostPlatform.isLinux) # External gl2ps causes failure linking to macOS OpenGL.framework
       (lib.cmakeFeature "CMAKE_MODULE_PATH" "${lib.getDev openvdb}/lib/cmake/OpenVDB") # provide FindOpenVDB.cmake
       (lib.cmakeFeature "PostgreSQL_ROOT" "${lib.getDev postgresql};${lib.getLib postgresql}") # postgresql
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOADIOS2" "YES") # adios2
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_fides" "YES") # adios2
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOLAS" "YES") # libLAS
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_GeovisGDAL" "YES") # gdal
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOGDAL" "YES") # gdal
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOADIOS2" "YES") # adios2
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOLAS" "YES") # libLAS
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOPDAL" "YES") # pdal
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOAlembic" "YES") # alembic
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOpenVDB" "YES") # openvdb
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOODBC" "YES") # unixodbc
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOPostgreSQL" "YES") # postgresql
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMySQL" "YES") # mariadb
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOCATALYST" "NO") # catalyst, missing in nixpkgs
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOCCT" "YES") # opencascade-occt
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOFFMPEG" "YES") # ffmpeg
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMotionFX" "YES") # builtin
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMotionFX" "YES") # vendored
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf2" "YES") # vendored
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf3" "YES") # vendored
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_RenderingFreeTypeFontConfig" "YES") # freetype, fontconfig
       (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
       (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
@@ -297,6 +292,11 @@ buildStdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_BUILD_PYI_FILES" true)
       (lib.cmakeFeature "VTK_PYTHON_VERSION" "3")
       (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_WebPython" "YES")
+      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_RenderingMatplotlib" "YES")
+    ]
+    ++ lib.optionals mpiSupport [
+      (lib.cmakeBool "VTK_USE_MPI" true)
+      (lib.cmakeFeature "VTK_GROUP_ENABLE_MPI" "YES")
     ]
     ++ lib.optionals finalAttrs.finalPackage.doCheck [
       (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
@@ -314,27 +314,13 @@ buildStdenv.mkDerivation (finalAttrs: {
   __darwinAllowLocalNetworking = finalAttrs.finalPackage.doCheck && mpiSupport;
 
   nativeCheckInputs = [
+    cli11
     ctestCheckHook
     headlessDisplayHook
   ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
 
   # tests are done in passthru.tests.withCheck
   doCheck = false;
-
-  disabledTests = [
-    # flaky tests
-    "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderItem"
-    "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderItemWidget"
-    "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderWindow"
-    "VTK::InteractionWidgetsPython-TestTensorWidget2"
-    "VTK::RenderingOpenGL2Cxx-TestGlyph3DMapperPickability"
-    # caught SIGSEGV/SIGTERM in mpiexec
-    "VTK::FiltersParallelCxx-MPI-DistributedData"
-    "VTK::FiltersParallelCxx-MPI-DistributedDataRenderPass"
-    # caught SIGSEGV in _XFlush(libX11.so)
-    "VTK::RenderingCoreCxx-TestCompositePolyDataMapperToggleScalarVisibilities"
-    "VTK::CommonDataModelCxx-quadraticIntersection"
-  ];
 
   # byte-compile python modules since the CMake build does not do it
   postInstall = lib.optionalString pythonSupport ''
@@ -374,6 +360,21 @@ buildStdenv.mkDerivation (finalAttrs: {
       };
       withCheck = finalAttrs.finalPackage.overrideAttrs {
         doCheck = true;
+
+        disabledTests = [
+          # flaky tests
+          "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderItem"
+          "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderItemWidget"
+          "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderWindow"
+          "VTK::InteractionWidgetsPython-TestTensorWidget2"
+          "VTK::RenderingOpenGL2Cxx-TestGlyph3DMapperPickability"
+          # caught SIGSEGV/SIGTERM in mpiexec
+          "VTK::FiltersParallelCxx-MPI-DistributedData"
+          "VTK::FiltersParallelCxx-MPI-DistributedDataRenderPass"
+          # caught SIGSEGV in _XFlush(libX11.so)
+          "VTK::RenderingCoreCxx-TestCompositePolyDataMapperToggleScalarVisibilities"
+          "VTK::CommonDataModelCxx-quadraticIntersection"
+        ];
       };
     };
   };

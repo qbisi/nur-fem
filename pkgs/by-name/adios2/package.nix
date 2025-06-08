@@ -138,7 +138,6 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "ADIOS2_USE_Campaign" true)
     (lib.cmakeBool "ADIOS2_USE_AWSSDK" false)
 
-    (lib.cmakeBool "BUILD_TESTING" false)
     # use vendored gtest as nixpkgs#gtest does not include <iomanip> in <gtest/gtest.h>
     (lib.cmakeBool "ADIOS2_USE_EXTERNAL_GTEST" false)
     (lib.cmakeBool "BUILD_TESTING" finalAttrs.finalPackage.doCheck)
@@ -161,7 +160,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   # Tests are time-consuming and moved to passthru.tests.withCheck.
   doCheck = false;
-
   dontUseNinjaCheck = true;
 
   preCheck = ''
@@ -178,23 +176,26 @@ stdenv.mkDerivation (finalAttrs: {
     mpiCheckPhaseHook
   ];
 
-  disabledTests = lib.optionals stdenv.hostPlatform.isDarwin [
-    # TypeError: cannot pickle 'TextIOWrapper' instances
-    "Test.Engine.DataMan1xN.Serial"
-    "Test.Engine.DataManSingleValues"
-  ];
-
-  pythonImportsCheck = [ "adios2" ];
-
   # required for finding the generated adios2-config.cmake file
   preInstall = ''
     export adios2_DIR=$out/lib/cmake/adios2
   '';
 
+  pythonImportsCheck = [ "adios2" ];
+
   passthru.tests = {
     withCheck = finalAttrs.finalPackage.overrideAttrs {
       doCheck = true;
+
+      disabledTests = lib.optionals stdenv.hostPlatform.isDarwin [
+        # TypeError: cannot pickle 'TextIOWrapper' instances
+        "Test.Engine.DataMan1xN.Serial"
+        "Test.Engine.DataManSingleValues"
+        # The test assumed to always contain n*64 byte-length records. Right now the length of index buffer is 71 bytes.
+        "Staging.1x1.Local2.BPS.BB.BP4_stream"
+      ];
     };
+
     cmake-config = testers.hasCmakeConfigModules {
       moduleNames = [ "adios2" ];
       package = finalAttrs.finalPackage;
