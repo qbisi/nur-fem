@@ -197,12 +197,9 @@ buildStdenv.mkDerivation (finalAttrs: {
       opencascade-occt
       fontconfig
       libGL
-      cli11
       openturns
-      openslide
       libarchive
       vtkPackages.openvdb
-      vtkPackages.catalyst
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       libXfixes
@@ -239,9 +236,12 @@ buildStdenv.mkDerivation (finalAttrs: {
       libogg
       libharu
       libtheora
+      cli11
+      openslide
       vtkPackages.hdf5
       vtkPackages.adios2
       vtkPackages.netcdf
+      vtkPackages.catalyst
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       tbb
