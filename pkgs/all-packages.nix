@@ -79,6 +79,13 @@
             }
           );
 
+          catalyst = prev.toPythonModule (
+            final.pkgs.catalyst.override {
+              pythonSupport = true;
+              python3Packages = final;
+            }
+          );
+
           vtk = prev.toPythonModule (
             final.pkgs.vtk.override {
               pythonSupport = true;
