@@ -73,6 +73,9 @@ stdenv.mkDerivation (finalAttrs: {
     downloadPage = "https://github.com/cburstedde/libsc.git";
     pkgConfigModules = [ "libsc" ];
     license = lib.licenses.lgpl21Plus;
-    maintainers = with lib.maintainers; [ qbisi ];
+    maintainers = with lib; [
+      cburstedde
+      qbisi
+    ];
   };
 })
