@@ -185,7 +185,7 @@ buildStdenv.mkDerivation (finalAttrs: {
       alembic
       imath
       vtkPackages.openvdb
-      c-blosc # should be propagated by openvdb
+      c-blosc
       tbb # should be propagated by openvdb
       unixODBC
       postgresql
@@ -201,7 +201,7 @@ buildStdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optional mpiSupport mpi
     ++ lib.optional tkSupport tk
-    ++ lib.optionals stdenv.hostPlatform.isLinux libXcursor;
+    ++ lib.optional stdenv.hostPlatform.isLinux libXcursor;
 
   # propagated by vtk-config.cmake
   propagatedBuildInputs =
