@@ -270,6 +270,8 @@ buildStdenv.mkDerivation (finalAttrs: {
     export QT_PLUGIN_PATH=${lib.getBin qt5.qtbase}/${qt5.qtbase.qtPluginPrefix}
   '';
 
+  env.CMAKE_PREFIX_PATH = "${lib.getDev openvdb}/lib/cmake/OpenVDB";
+
   cmakeFlags =
     [
       (lib.cmakeBool "VTK_IGNORE_CMAKE_CXX11_CHECKS" true)
@@ -295,9 +297,6 @@ buildStdenv.mkDerivation (finalAttrs: {
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingOpenXR" false) # openxr
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingOpenVR" false) # openvr
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingAnari" false) # anari
-
-      # IO
-      (lib.cmakeFeature "CMAKE_MODULE_PATH" "${lib.getDev openvdb}/lib/cmake/OpenVDB") # provide FindOpenVDB.cmake
 
       # qtSupport
       (vtkBool "VTK_GROUP_ENABLE_Qt" (withQt6 || withQt5))
