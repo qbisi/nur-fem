@@ -82,6 +82,7 @@
           vtk = prev.toPythonModule (
             final.pkgs.vtk.override {
               pythonSupport = true;
+              mpiSupport = true;
               python3Packages = final;
             }
           );

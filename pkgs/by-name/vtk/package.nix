@@ -9,6 +9,7 @@
   pkg-config,
 
   # common dependencies
+  tk,
   mpi,
   python3Packages,
   fmt,
@@ -27,7 +28,12 @@
   libxml2,
   exprtk,
   utf8cpp,
+  libarchive,
   nlohmann_json,
+
+  # filters
+  openturns,
+  openslide,
 
   # io modules
   adios2,
@@ -63,8 +69,6 @@
   freetype,
   fontconfig,
   libX11,
-  libXfixes,
-  libXrender,
   libXcursor,
   gl2ps,
   libGL,
@@ -85,10 +89,19 @@
   # we set mpiSupport to false by default.
   mpiSupport ? false,
   pythonSupport ? false,
+  tkSupport ? pythonSupport,
+  smpToolsBackend ? if stdenv.hostPlatform.isLinux then "TBB" else "STDThread",
 
   # passthru.tests
   testers,
 }:
+assert tkSupport -> pythonSupport;
+assert lib.assertMsg (builtins.elem smpToolsBackend [
+  "Sequential"
+  "STDThread"
+  "OpenMP"
+  "TBB"
+]) "smpToolsBackend must be one of Sequential, STDThread, OpenMP and TBB";
 let
   vtkPackages = lib.makeScope newScope (self: {
     inherit
@@ -114,6 +127,7 @@ let
     netcdf = self.callPackage netcdf.override { };
     adios2 = self.callPackage adios2.override { };
   });
+  vtkBool = feature: bool: lib.cmakeFeature feature "${if bool then "YES" else "NO"}";
   # While char_traits<uint8_t> is not officially supported by any C++
   # standard, gcc and libcxx(<19) have extensions to support the type. The
   # C++20 standard introduces support for char_traits<char8_t>.
@@ -161,25 +175,33 @@ buildStdenv.mkDerivation (finalAttrs: {
       python3Packages.pythonImportsCheckHook
     ];
 
-  buildInputs = [
-    libLAS
-    libgeotiff
-    laszip_2
-    gdal
-    pdal
-    alembic
-    imath # should be propagated by alembic
-    vtkPackages.openvdb
-    c-blosc # should be propagated by openvdb
-    tbb # should be propagated by openvdb
-    unixODBC
-    postgresql
-    libmysqlclient
-    ffmpeg
-    opencascade-occt
-    fontconfig
-    libGL
-  ] ++ lib.optional mpiSupport mpi;
+  buildInputs =
+    [
+      libLAS
+      libgeotiff
+      laszip_2
+      gdal
+      pdal
+      alembic
+      imath # should be propagated by alembic
+      vtkPackages.openvdb
+      c-blosc # should be propagated by openvdb
+      tbb # should be propagated by openvdb
+      unixODBC
+      postgresql
+      libmysqlclient
+      ffmpeg
+      opencascade-occt
+      fontconfig
+      libGL
+      cli11
+      openturns
+      openslide
+      libarchive
+    ]
+    ++ lib.optional mpiSupport mpi
+    ++ lib.optional tkSupport tk
+    ++ lib.optionals stdenv.hostPlatform.isLinux libXcursor;
 
   # propagated by vtk-config.cmake
   propagatedBuildInputs =
@@ -217,13 +239,9 @@ buildStdenv.mkDerivation (finalAttrs: {
       libX11
       gl2ps
     ]
-    ++ lib.optionals withQt5 [
-      qt5.qttools
-      qt5.qtdeclarative
-    ]
-    ++ lib.optionals withQt6 [
-      qt6.qttools
-      qt6.qtdeclarative
+    ++ lib.optionals (withQt5 || withQt6) [
+      vtkPackages.qtPackages.qttools
+      vtkPackages.qtPackages.qtdeclarative
     ]
     # create meta package providing dist-info for python3Pacakges.vtk that common cmake build does not do
     ++ lib.optionals pythonSupport [
@@ -248,55 +266,54 @@ buildStdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags =
     [
+      (lib.cmakeBool "VTK_IGNORE_CMAKE_CXX11_CHECKS" true)
+      (lib.cmakeFeature "CMAKE_CXX_STANDARD" "14") # Boost.Math requires C++14
+      (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
+      (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
+      (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
+      (lib.cmakeBool "VTK_BUILD_ALL_MODULES" true)
       (lib.cmakeBool "VTK_VERSIONED_INSTALL" false)
+      (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" smpToolsBackend)
+
+      # use system packages if possible
       (lib.cmakeBool "VTK_USE_EXTERNAL" true)
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_fast_float" false) # required version incompatible
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_pegtl" false) # required version incompatible
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_cgns" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_ioss" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_token" false) # missing in nixpkgs
-      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_xdmf2" false) # missing in nixpkgs
-      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_xdmf3" false) # missing in nixpkgs
-      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" stdenv.hostPlatform.isLinux) # External gl2ps causes failure linking to macOS OpenGL.framework
+      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" stdenv.hostPlatform.isLinux) # external gl2ps causes failure linking to macOS OpenGL.framework
+
+      # Rendering
+      (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingRayTracing" false) # ospray
+      (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingOpenXR" false) # openxr
+      (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingOpenVR" false) # openvr
+      (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingAnari" false) # anari
+
+      # IO
       (lib.cmakeFeature "CMAKE_MODULE_PATH" "${lib.getDev openvdb}/lib/cmake/OpenVDB") # provide FindOpenVDB.cmake
-      (lib.cmakeFeature "PostgreSQL_ROOT" "${lib.getDev postgresql};${lib.getLib postgresql}") # postgresql
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_GeovisGDAL" "YES") # gdal
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOADIOS2" "YES") # adios2
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOLAS" "YES") # libLAS
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOPDAL" "YES") # pdal
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOAlembic" "YES") # alembic
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOpenVDB" "YES") # openvdb
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOODBC" "YES") # unixodbc
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOPostgreSQL" "YES") # postgresql
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMySQL" "YES") # mariadb
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOOCCT" "YES") # opencascade-occt
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOFFMPEG" "YES") # ffmpeg
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMotionFX" "YES") # vendored
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf2" "YES") # vendored
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf3" "YES") # vendored
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_RenderingFreeTypeFontConfig" "YES") # freetype, fontconfig
-      (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
-      (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
-      (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
-      # `VTK_SMP_IMPLEMENTATION_TYPE` can be one of Sequential, OpenMP, TBB, and STDThread.
-      (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" (
-        if stdenv.hostPlatform.isLinux then "TBB" else "STDThread"
-      ))
-    ]
-    ++ lib.optionals (withQt6 || withQt5) [
-      (lib.cmakeFeature "VTK_GROUP_ENABLE_Qt" "YES")
+      # (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMotionFX" "YES") # vendored
+      # (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf2" "YES") # vendored
+      # (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf3" "YES") # vendored
+
+      # qtSupport
+      (vtkBool "VTK_GROUP_ENABLE_Qt" (withQt6 || withQt5))
       (lib.cmakeFeature "VTK_QT_VERSION" "Auto") # will search for Qt6 first
-    ]
-    ++ lib.optionals pythonSupport [
-      (lib.cmakeBool "VTK_WRAP_PYTHON" true)
-      (lib.cmakeBool "VTK_BUILD_PYI_FILES" true)
+
+      # tkSupport
+      (lib.cmakeBool "VTK_USE_TK" tkSupport)
+      (vtkBool "VTK_GROUP_ENABLE_Tk" tkSupport)
+
+      # pythonSupport
+      (lib.cmakeBool "VTK_WRAP_PYTHON" pythonSupport)
+      (lib.cmakeBool "VTK_BUILD_PYI_FILES" pythonSupport)
       (lib.cmakeFeature "VTK_PYTHON_VERSION" "3")
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_WebPython" "YES")
-      (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_RenderingMatplotlib" "YES")
-    ]
-    ++ lib.optionals mpiSupport [
-      (lib.cmakeBool "VTK_USE_MPI" true)
-      (lib.cmakeFeature "VTK_GROUP_ENABLE_MPI" "YES")
+      # (vtkBool "VTK_MODULE_ENABLE_VTK_WebPython" pythonSupport)
+      # (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingMatplotlib" pythonSupport)
+
+      # mpiSupport
+      (lib.cmakeBool "VTK_USE_MPI" mpiSupport)
+      (vtkBool "VTK_GROUP_ENABLE_MPI" mpiSupport)
     ]
     ++ lib.optionals finalAttrs.finalPackage.doCheck [
       (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
@@ -314,7 +331,6 @@ buildStdenv.mkDerivation (finalAttrs: {
   __darwinAllowLocalNetworking = finalAttrs.finalPackage.doCheck && mpiSupport;
 
   nativeCheckInputs = [
-    cli11
     ctestCheckHook
     headlessDisplayHook
   ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
@@ -332,10 +348,9 @@ buildStdenv.mkDerivation (finalAttrs: {
   dontWrapQtApps = true;
 
   postFixup =
-    # Remove thirdparty find module that have been provided in nixpkgs
+    # remove thirdparty cmake patches
     ''
       rm -rf $out/lib/cmake/vtk/patches
-      rm $out/lib/cmake/vtk/Find{double-conversion,EXPAT,Freetype,utf8cpp,LibXml2,FontConfig}.cmake
     ''
     + lib.optionalString stdenv.hostPlatform.isLinux ''
       patchelf --add-rpath ${lib.getLib libGL}/lib $out/lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
