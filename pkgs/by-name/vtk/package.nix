@@ -12,6 +12,7 @@
   tk,
   mpi,
   python3Packages,
+  catalyst,
   fmt,
   boost,
   eigen,
@@ -127,6 +128,7 @@ let
     };
     openvdb = self.callPackage openvdb.override { };
     netcdf = self.callPackage netcdf.override { };
+    catalyst = self.callPackage catalyst.override { };
     adios2 = self.callPackage adios2.override { };
   });
   vtkBool = feature: bool: lib.cmakeFeature feature "${if bool then "YES" else "NO"}";
@@ -186,7 +188,6 @@ buildStdenv.mkDerivation (finalAttrs: {
       pdal
       alembic
       imath
-      vtkPackages.openvdb
       c-blosc
       tbb # should be propagated by openvdb
       unixODBC
@@ -200,6 +201,8 @@ buildStdenv.mkDerivation (finalAttrs: {
       openturns
       openslide
       libarchive
+      vtkPackages.openvdb
+      vtkPackages.catalyst
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       libXfixes
@@ -279,6 +282,7 @@ buildStdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
       (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
+      (lib.cmakeBool "VTK_ENABLE_CATALYST" true)
       (lib.cmakeBool "VTK_BUILD_ALL_MODULES" true)
       (lib.cmakeBool "VTK_VERSIONED_INSTALL" false)
       (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" smpToolsBackend)
