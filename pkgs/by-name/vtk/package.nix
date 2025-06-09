@@ -292,9 +292,6 @@ buildStdenv.mkDerivation (finalAttrs: {
 
       # IO
       (lib.cmakeFeature "CMAKE_MODULE_PATH" "${lib.getDev openvdb}/lib/cmake/OpenVDB") # provide FindOpenVDB.cmake
-      # (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOMotionFX" "YES") # vendored
-      # (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf2" "YES") # vendored
-      # (lib.cmakeFeature "VTK_MODULE_ENABLE_VTK_IOXdmf3" "YES") # vendored
 
       # qtSupport
       (vtkBool "VTK_GROUP_ENABLE_Qt" (withQt6 || withQt5))
@@ -308,8 +305,6 @@ buildStdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_WRAP_PYTHON" pythonSupport)
       (lib.cmakeBool "VTK_BUILD_PYI_FILES" pythonSupport)
       (lib.cmakeFeature "VTK_PYTHON_VERSION" "3")
-      # (vtkBool "VTK_MODULE_ENABLE_VTK_WebPython" pythonSupport)
-      # (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingMatplotlib" pythonSupport)
 
       # mpiSupport
       (lib.cmakeBool "VTK_USE_MPI" mpiSupport)
