@@ -183,7 +183,7 @@ buildStdenv.mkDerivation (finalAttrs: {
       gdal
       pdal
       alembic
-      imath # should be propagated by alembic
+      imath
       vtkPackages.openvdb
       c-blosc # should be propagated by openvdb
       tbb # should be propagated by openvdb
@@ -355,6 +355,7 @@ buildStdenv.mkDerivation (finalAttrs: {
     inherit
       pythonSupport
       mpiSupport
+      tkSupport
       ;
 
     vtkPackages = vtkPackages.overrideScope (
