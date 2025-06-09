@@ -83,9 +83,7 @@ stdenv.mkDerivation (finalAttrs: {
       moduleNames = [ "catalyst" ];
       package = finalAttrs.finalPackage;
     };
-
     serial = catalyst.override { mpiSupport = false; };
-
     fortran = catalyst.override { fortranSupport = true; };
   };
 
