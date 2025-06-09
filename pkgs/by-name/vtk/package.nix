@@ -282,7 +282,12 @@ buildStdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
       (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
+
+      # vtk common configure options
+      (lib.cmakeBool "VTK_DEBUG_LEAKS" true)
+      (lib.cmakeBool "VTK_DISPATCH_SOA_ARRAYS" true)
       (lib.cmakeBool "VTK_ENABLE_CATALYST" true)
+      (lib.cmakeBool "VTK_WRAP_SERIALIZATION" true)
       (lib.cmakeBool "VTK_BUILD_ALL_MODULES" true)
       (lib.cmakeBool "VTK_VERSIONED_INSTALL" false)
       (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" smpToolsBackend)
