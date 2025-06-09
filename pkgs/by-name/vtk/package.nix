@@ -69,6 +69,8 @@
   freetype,
   fontconfig,
   libX11,
+  libXfixes,
+  libXrender,
   libXcursor,
   gl2ps,
   libGL,
@@ -199,9 +201,13 @@ buildStdenv.mkDerivation (finalAttrs: {
       openslide
       libarchive
     ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      libXfixes
+      libXrender
+      libXcursor
+    ]
     ++ lib.optional mpiSupport mpi
-    ++ lib.optional tkSupport tk
-    ++ lib.optional stdenv.hostPlatform.isLinux libXcursor;
+    ++ lib.optional tkSupport tk;
 
   # propagated by vtk-config.cmake
   propagatedBuildInputs =
