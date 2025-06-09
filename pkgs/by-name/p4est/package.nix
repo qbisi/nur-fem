@@ -83,7 +83,7 @@ stdenv.mkDerivation (finalAttrs: {
     downloadPage = "https://github.com/cburstedde/p4est.git";
     pkgConfigModules = [ "p4est" ];
     license = lib.licenses.gpl2Plus;
-    maintainers = with lib; [
+    maintainers = with lib.maintainers; [
       cburstedde
       qbisi
     ];
