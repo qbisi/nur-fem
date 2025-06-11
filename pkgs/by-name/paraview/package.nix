@@ -89,6 +89,6 @@ stdenv.mkDerivation (finalAttrs: {
       qbisi
     ];
     changelog = "https://www.kitware.com/paraview-${lib.concatStringsSep "-" (lib.versions.splitVersion finalAttrs.version)}-release-notes";
-    platforms = lib.platforms.linux;
+    platforms = lib.platforms.unix;
   };
 })
