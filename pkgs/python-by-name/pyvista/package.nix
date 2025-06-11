@@ -42,6 +42,8 @@ buildPythonPackage rec {
       --replace-fail 'vtkXdmfReader' 'vtkXdmf3Reader' \
   '';
 
+  pythonRelaxDeps = [ "vtk" ];
+
   build-system = [ setuptools ];
 
   dependencies = [
