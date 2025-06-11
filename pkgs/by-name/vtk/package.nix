@@ -13,7 +13,7 @@
   mpi,
   python3Packages,
   catalyst,
-  fmt,
+  cli11,
   boost,
   eigen,
   verdict,
@@ -75,13 +75,14 @@
   libXcursor,
   gl2ps,
   libGL,
+  libGLU,
+  libglut,
   qt5,
   qt6,
 
   # check
-  cli11,
   ctestCheckHook,
-  headlessDisplayHook,
+  headlessDisplayHook2,
   mpiCheckPhaseHook,
 
   # custom options
@@ -142,32 +143,26 @@ let
 in
 buildStdenv.mkDerivation (finalAttrs: {
   pname = "vtk";
-  version = "9.4.2";
+  version = "9.5.0.rc2";
 
   srcs =
     [
       (fetchurl {
         url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTK-${finalAttrs.version}.tar.gz";
-        hash = "sha256-NsmODalrsSow/lNwgJeqlJLntm1cOzZuHI3CUeKFagI=";
+        hash = "sha256-US1T9x3BciDYnerl2D9XktPPfIwr3wlqdtjAexZPHkw=";
       })
     ]
     ++ lib.optionals finalAttrs.finalPackage.doCheck [
       (fetchurl {
         url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTKData-${finalAttrs.version}.tar.gz";
-        hash = "sha256-Hgqj32POOXXSnutmmF/DczMIJPkMKZG+UpUa0qgkGxE=";
+        hash = "sha256-dbY/TYGD/QeNchcOY+7EgCwgSfZ/upGtA99RciShl6Y=";
       })
     ];
 
-  patches = [
-    (fetchpatch2 {
-      url = "https://gitlab.archlinux.org/archlinux/packaging/packages/vtk/-/raw/b4d07bd7ee5917e2c32f7f056cf78472bcf1cec2/netcdf-4.9.3.patch?full_index=1";
-      hash = "sha256-h1NVeLuwAj7eUG/WSvrpXN9PtpjFQ/lzXmJncwY0r7w=";
-    })
-    (fetchpatch2 {
-      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/46f0c203847bdda7985c0dadcb50157f96cf5aaf.patch?full_index=1";
-      hash = "sha256-kKJKqvSfBpShRkrCa5MdVPoo5iLuoTspDmev3Dz4z4Q=";
-    })
-  ];
+  postPatch = ''
+    substituteInPlace Wrapping/Python/vtkmodules/tk/vtkLoadPythonTkWidgets.py \
+      --replace-fail 'filename = prefix+name+extension' 'filename = prefix+modname+extension'
+  '';
 
   nativeBuildInputs =
     [
@@ -196,10 +191,14 @@ buildStdenv.mkDerivation (finalAttrs: {
       ffmpeg
       opencascade-occt
       fontconfig
-      libGL
       openturns
       libarchive
+      libGL
       vtkPackages.openvdb
+    ]
+    ++ lib.optionals finalAttrs.finalPackage.doCheck [
+      libGLU
+      libglut
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       libXfixes
@@ -212,7 +211,6 @@ buildStdenv.mkDerivation (finalAttrs: {
   # propagated by vtk-config.cmake
   propagatedBuildInputs =
     [
-      fmt
       eigen
       boost
       verdict
@@ -284,6 +282,7 @@ buildStdenv.mkDerivation (finalAttrs: {
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
 
       # vtk common configure options
+      (lib.cmakeBool "VTK_BUILD_SCALE_SOA_ARRAYS" true)
       (lib.cmakeBool "VTK_DISPATCH_SOA_ARRAYS" true)
       (lib.cmakeBool "VTK_ENABLE_CATALYST" true)
       (lib.cmakeBool "VTK_WRAP_SERIALIZATION" true)
@@ -298,6 +297,9 @@ buildStdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_cgns" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_ioss" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_token" false) # missing in nixpkgs
+      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_fmt" false) # prefer vendored fmt
+      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_scn" false) # missing in nixpkgs
+      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_vtkviskores" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" stdenv.hostPlatform.isLinux) # external gl2ps causes failure linking to macOS OpenGL.framework
 
       # Rendering
@@ -340,7 +342,7 @@ buildStdenv.mkDerivation (finalAttrs: {
 
   nativeCheckInputs = [
     ctestCheckHook
-    headlessDisplayHook
+    headlessDisplayHook2
   ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
 
   # tests are done in passthru.tests.withCheck
@@ -386,28 +388,26 @@ buildStdenv.mkDerivation (finalAttrs: {
         doCheck = true;
 
         disabledTests = [
-          # flaky tests
-          "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderItem"
-          "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderItemWidget"
-          "VTK::GUISupportQtQuickCxx-TestQQuickVTKRenderWindow"
+          # the test fails and is visually not acceptable
+          "VTK::RenderingExternalCxx-TestGLUTRenderWindow"
+          # the test fails but is visually acceptable
           "VTK::InteractionWidgetsPython-TestTensorWidget2"
-          "VTK::RenderingOpenGL2Cxx-TestGlyph3DMapperPickability"
-          # caught SIGSEGV/SIGTERM in mpiexec
-          "VTK::FiltersParallelCxx-MPI-DistributedData"
-          "VTK::FiltersParallelCxx-MPI-DistributedDataRenderPass"
-          # caught SIGSEGV in _XFlush(libX11.so)
-          "VTK::RenderingCoreCxx-TestCompositePolyDataMapperToggleScalarVisibilities"
-          "VTK::CommonDataModelCxx-quadraticIntersection"
+          # outputs uniform font style throughout (expect regular, italic, bold, bold-italic)
+          "VTK::RenderingFreeTypeFontConfigCxx-TestSystemFontRendering"
         ];
       };
     };
   };
 
+  requiredSystemFeatures = [ "big-parallel" ];
+
   meta = {
     description = "Open source libraries for 3D computer graphics, image processing and visualization";
     homepage = "https://www.vtk.org/";
+    changelog = "https://docs.vtk.org/en/latest/release_details/${lib.versions.majorMinor finalAttrs.version}.html";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ qbisi ];
     platforms = lib.platforms.unix;
+    broken = smpToolsBackend == "OpenMP";
   };
 })
