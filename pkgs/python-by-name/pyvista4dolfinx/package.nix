@@ -7,7 +7,7 @@
   pyvista,
   pyvistaqt,
   pytestCheckHook,
-  headlessDisplayHook,
+  headlessDisplayHook2,
   writableTmpDirAsHomeHook,
 }:
 
@@ -35,7 +35,7 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     pytestCheckHook
-    headlessDisplayHook
+    headlessDisplayHook2
     writableTmpDirAsHomeHook
   ];
 

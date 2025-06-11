@@ -7,7 +7,7 @@
   pytest,
   pyvista,
   pytestCheckHook,
-  headlessDisplayHook,
+  headlessDisplayHook2,
 }:
 
 buildPythonPackage rec {
@@ -33,7 +33,7 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     pytestCheckHook
-    headlessDisplayHook
+    headlessDisplayHook2
   ];
 
   # capable of doing onscreen/offscreen plot
