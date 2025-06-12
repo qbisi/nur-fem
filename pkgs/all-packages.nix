@@ -90,6 +90,7 @@
             final.pkgs.vtk.override {
               pythonSupport = true;
               mpiSupport = true;
+              withQt6 = true;
               python3Packages = final;
             }
           );

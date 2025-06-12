@@ -107,6 +107,13 @@ assert lib.assertMsg (builtins.elem smpToolsBackend [
   "TBB"
 ]) "smpToolsBackend must be one of Sequential, STDThread, OpenMP and TBB";
 let
+  qtPackages =
+    if withQt6 then
+      qt6
+    else if withQt5 then
+      qt5
+    else
+      null;
   vtkPackages = lib.makeScope newScope (self: {
     inherit
       tbb
@@ -116,13 +123,6 @@ let
       pythonSupport
       ;
 
-    qtPackages =
-      if withQt6 then
-        qt6
-      else if withQt5 then
-        qt5
-      else
-        null;
     hdf5 = hdf5.override {
       inherit mpi mpiSupport;
       cppSupport = !mpiSupport;
@@ -205,6 +205,10 @@ buildStdenv.mkDerivation (finalAttrs: {
       libXrender
       libXcursor
     ]
+    ++ lib.optionals (withQt5 || withQt6) [
+      qtPackages.qttools
+      qtPackages.qtdeclarative
+    ]
     ++ lib.optional mpiSupport mpi
     ++ lib.optional tkSupport tk;
 
@@ -245,10 +249,6 @@ buildStdenv.mkDerivation (finalAttrs: {
       tbb
       libX11
       gl2ps
-    ]
-    ++ lib.optionals (withQt5 || withQt6) [
-      vtkPackages.qtPackages.qttools
-      vtkPackages.qtPackages.qtdeclarative
     ]
     # create meta package providing dist-info for python3Pacakges.vtk that common cmake build does not do
     ++ lib.optionals pythonSupport [
@@ -331,7 +331,7 @@ buildStdenv.mkDerivation (finalAttrs: {
 
   preCheck =
     lib.optionalString (withQt5 || withQt6) ''
-      export QML2_IMPORT_PATH=${lib.getBin vtkPackages.qtPackages.qtdeclarative}/${vtkPackages.qtPackages.qtbase.qtQmlPrefix}
+      export QML2_IMPORT_PATH=${lib.getBin qtPackages.qtdeclarative}/${qtPackages.qtbase.qtQmlPrefix}
     ''
     # libvtkglad.so will find and load libGL.so at runtime.
     + lib.optionalString stdenv.hostPlatform.isLinux ''
@@ -386,6 +386,11 @@ buildStdenv.mkDerivation (finalAttrs: {
       };
       withCheck = finalAttrs.finalPackage.overrideAttrs {
         doCheck = true;
+
+        nativeBuildInputs = lib.optional (withQt5 || withQt6) [
+          qtPackages.qttools
+          qtPackages.wrapQtAppsHook
+        ];
 
         disabledTests = [
           # the test fails and is visually not acceptable
