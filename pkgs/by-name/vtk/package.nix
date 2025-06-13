@@ -95,6 +95,7 @@
   pythonSupport ? false,
   tkSupport ? pythonSupport,
   smpToolsBackend ? if stdenv.hostPlatform.isLinux then "TBB" else "STDThread",
+  preferGLES ? stdenv.hostPlatform.system == "aarch64-linux",
 
   # passthru.tests
   testers,
@@ -307,6 +308,7 @@ buildStdenv.mkDerivation (finalAttrs: {
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingOpenXR" false) # openxr
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingOpenVR" false) # openvr
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingAnari" false) # anari
+      (lib.cmakeBool "VTK_OPENGL_USE_GLES" preferGLES)
 
       # qtSupport
       (vtkBool "VTK_GROUP_ENABLE_Qt" (withQt6 || withQt5))
