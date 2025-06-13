@@ -95,7 +95,7 @@
   pythonSupport ? false,
   tkSupport ? pythonSupport,
   smpToolsBackend ? if stdenv.hostPlatform.isLinux then "TBB" else "STDThread",
-  preferGLES ? stdenv.hostPlatform.system == "aarch64-linux",
+  preferGLES ? false,
 
   # passthru.tests
   testers,
