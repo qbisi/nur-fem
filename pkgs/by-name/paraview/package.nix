@@ -102,12 +102,16 @@ stdenv.mkDerivation (
       ''
       + lib.optionalString stdenv.hostPlatform.isLinux ''
         install -Dm644 ../Qt/Components/Resources/Icons/pvIcon.svg $out/share/icons/hicolor/scalable/apps/paraview.svg
+      ''
+      + lib.optionalString stdenv.hostPlatform.isDarwin ''
+        ln -s ../Applications/paraview.app/Contents/MacOS/paraview $out/bin/paraview
       '';
 
     meta = {
       description = "3D Data analysis and visualization application";
       homepage = "https://www.paraview.org";
       changelog = "https://www.kitware.com/paraview-${lib.concatStringsSep "-" (lib.versions.splitVersion finalAttrs.version)}-release-notes";
+      mainProgram = "paraview";
       license = lib.licenses.bsd3;
       platforms = lib.platforms.unix;
       maintainers = with lib.maintainers; [

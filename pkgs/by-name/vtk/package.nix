@@ -160,10 +160,14 @@ stdenv.mkDerivation (finalAttrs: {
       })
     ];
 
-  postPatch = ''
-    substituteInPlace Wrapping/Python/vtkmodules/tk/vtkLoadPythonTkWidgets.py \
-      --replace-fail 'filename = prefix+name+extension' 'filename = prefix+modname+extension'
-  '';
+  postPatch =
+    ''
+      substituteInPlace Wrapping/Python/vtkmodules/tk/vtkLoadPythonTkWidgets.py \
+        --replace-fail 'filename = prefix+name+extension' 'filename = prefix+modname+extension'
+    ''
+    + lib.optionalString stdenv.hostPlatform.isDarwin ''
+      sed -i '/set(VTK_USE_X "@VTK_USE_X@")/a set(VTK_USE_COCOA "@VTK_USE_COCOA@")' CMake/vtk-config.cmake.in
+    '';
 
   nativeBuildInputs =
     [
