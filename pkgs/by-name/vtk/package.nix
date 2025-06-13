@@ -142,7 +142,7 @@ let
   # https://reviews.llvm.org/D138307 for details.
   buildStdenv = if stdenv.cc.isClang then llvmPackages_18.stdenv else stdenv;
 in
-buildStdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation (finalAttrs: {
   pname = "vtk";
   version = "9.5.0.rc2";
 
@@ -276,14 +276,11 @@ buildStdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags =
     [
-      (lib.cmakeBool "VTK_IGNORE_CMAKE_CXX11_CHECKS" true)
-      (lib.cmakeFeature "CMAKE_CXX_STANDARD" "14") # Boost.Math requires C++14
       (lib.cmakeFeature "CMAKE_INSTALL_BINDIR" "bin")
       (lib.cmakeFeature "CMAKE_INSTALL_LIBDIR" "lib")
       (lib.cmakeFeature "CMAKE_INSTALL_INCLUDEDIR" "include")
 
       # vtk common configure options
-      (lib.cmakeBool "VTK_BUILD_SCALE_SOA_ARRAYS" true)
       (lib.cmakeBool "VTK_DISPATCH_SOA_ARRAYS" true)
       (lib.cmakeBool "VTK_ENABLE_CATALYST" true)
       (lib.cmakeBool "VTK_WRAP_SERIALIZATION" true)
@@ -328,6 +325,7 @@ buildStdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optionals preferGLES [
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingExternal" false)
+      (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingVR" false)
       (lib.cmakeBool "VTK_OPENGL_USE_GLES" true)
     ]
     ++ lib.optionals finalAttrs.finalPackage.doCheck [
