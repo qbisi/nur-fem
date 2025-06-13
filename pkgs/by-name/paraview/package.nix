@@ -15,7 +15,7 @@ stdenv.mkDerivation (
   let
     paraviewFilesUrl = "https://www.paraview.org/files/v${lib.versions.majorMinor finalAttrs.version}";
     doc = fetchurl {
-      url = "${paraviewFilesUrl}/ParaViewGettingStarted-v6.0.0.pdf";
+      url = "${paraviewFilesUrl}/ParaViewGettingStarted-6.0.0.pdf";
       name = "GettingStarted.pdf";
       hash = "sha256-egoRRrxUiKL0sSqxEqpOTZRWsfFyMkil/m3V/XBFBN4=";
     };
