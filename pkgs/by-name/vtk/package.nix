@@ -308,7 +308,6 @@ buildStdenv.mkDerivation (finalAttrs: {
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingOpenXR" false) # openxr
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingOpenVR" false) # openvr
       (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingAnari" false) # anari
-      (lib.cmakeBool "VTK_OPENGL_USE_GLES" preferGLES)
 
       # qtSupport
       (vtkBool "VTK_GROUP_ENABLE_Qt" (withQt6 || withQt5))
@@ -326,6 +325,10 @@ buildStdenv.mkDerivation (finalAttrs: {
       # mpiSupport
       (lib.cmakeBool "VTK_USE_MPI" mpiSupport)
       (vtkBool "VTK_GROUP_ENABLE_MPI" mpiSupport)
+    ]
+    ++ lib.optionals preferGLES [
+      (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingExternal" false)
+      (lib.cmakeBool "VTK_OPENGL_USE_GLES" true)
     ]
     ++ lib.optionals finalAttrs.finalPackage.doCheck [
       (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
