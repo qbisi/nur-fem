@@ -1,15 +1,5 @@
 builds:
   - exclude: []
     include:
-      - "packages.x86_64-linux.*"
-    branch: garnix-x86_64-linux
-
-  - exclude: []
-    include:
-      - "packages.aarch64-linux.*"
-    branch: garnix-aarch64-linux
-
-  - exclude: []
-    include:
       - "packages.aarch64-darwin.*"
     branch: garnix-aarch64-darwin
