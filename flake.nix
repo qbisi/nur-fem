@@ -56,10 +56,12 @@
               inherit (self'.legacyPackages) callPackage;
               directory = ./pkgs/by-name;
             })
-            // (lib.packagesFromDirectoryRecursive {
-              inherit (self'.legacyPackages.python312Packages) callPackage;
-              directory = ./pkgs/python-by-name;
-            });
+            // (lib.mapAttrs' (n: v: lib.nameValuePair ("python312-" + n) v) (
+              lib.packagesFromDirectoryRecursive {
+                inherit (self'.legacyPackages.python312Packages) callPackage;
+                directory = ./pkgs/python-by-name;
+              }
+            ));
 
           hydraJobs =
             let
