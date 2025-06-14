@@ -23,8 +23,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     (fetchpatch2 {
-      url = "https://github.com/KaHIP/KaHIP/pull/158/commits/0e12e01657260879fbed52aa131393cf5eb2fb7c.patch?full_index=1";
-      hash = "sha256-JI29l/BnNUYaKKcKx6YcNJ3+nQjxEprsB5igvXrEHpw=";
+      url = "https://github.com/KaHIP/KaHIP/pull/158/commits/5473b65340849b36844bf3f331142e0192d490d3.patch?full_index=1";
+      hash = "sha256-adql6lYZzwZZ/HbTbiQ03NURWZ9cTjGJADqtgAYWt9w=";
     })
   ];
 
