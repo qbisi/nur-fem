@@ -106,6 +106,8 @@
       ...
     }:
     {
-      legacyPackages = lib.makeScope pkgs.newScope (final: self.overlays.default final pkgs);
+      legacyPackages = lib.removeAttrs (lib.makeScope pkgs.newScope (
+        final: self.overlays.default final pkgs
+      )) [ "packages" ];
     };
 }
