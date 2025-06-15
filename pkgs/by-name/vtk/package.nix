@@ -389,15 +389,16 @@ stdenv.mkDerivation (finalAttrs: {
     tests = {
       cmake-config = testers.hasCmakeConfigModules {
         moduleNames = [ "VTK" ];
+
         package = finalAttrs.finalPackage;
-      };
-      withCheck = finalAttrs.finalPackage.overrideAttrs {
-        doCheck = true;
 
         nativeBuildInputs = lib.optional (withQt5 || withQt6) [
           qtPackages.qttools
           qtPackages.wrapQtAppsHook
         ];
+      };
+      withCheck = finalAttrs.finalPackage.overrideAttrs {
+        doCheck = true;
 
         disabledTests = [
           # the test fails and is visually not acceptable
