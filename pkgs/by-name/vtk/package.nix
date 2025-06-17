@@ -162,8 +162,8 @@ stdenv.mkDerivation (finalAttrs: {
     + lib.optionalString stdenv.hostPlatform.isDarwin ''
       sed -i '/set(VTK_USE_X "@VTK_USE_X@")/a set(VTK_USE_COCOA "@VTK_USE_COCOA@")' CMake/vtk-config.cmake.in
 
-      substituteInPlace Rendering/OpenGL2/vtkOpenGLRenderWindow.cxx \
-        --replace-fail "this->SymbolLoader.LoadFunction != nullptr" "false"
+      substituteInPlace GUISupport/Qt/QVTKOpenGLNativeWidget.cxx \
+        --replace-fail "this->RenderWindow->SetOpenGLSymbolLoader(loadFunc, this->context());" ""
     '';
 
   nativeBuildInputs =
