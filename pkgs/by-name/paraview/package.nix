@@ -5,9 +5,9 @@
   fetchzip,
   cmake,
   ninja,
-  catalyst,
   protobuf,
   python3Packages,
+  libsForQt5,
   qt6Packages,
 }:
 stdenv.mkDerivation (
@@ -52,7 +52,6 @@ stdenv.mkDerivation (
       (lib.cmakeBool "PARAVIEW_USE_MPI" true)
       (lib.cmakeBool "PARAVIEW_USE_PYTHON" true)
       (lib.cmakeBool "PARAVIEW_ENABLE_WEB" true)
-      (lib.cmakeBool "PARAVIEW_ENABLE_EXAMPLES" true)
       (lib.cmakeBool "PARAVIEW_ENABLE_CATALYST" true)
       (lib.cmakeBool "PARAVIEW_ENABLE_VISITBRIDGE" true)
       (lib.cmakeBool "PARAVIEW_ENABLE_ADIOS2" true)
@@ -78,12 +77,14 @@ stdenv.mkDerivation (
       qt6Packages.wrapQtAppsHook
     ];
 
-    buildInputs = [
-      qt6Packages.qttools
-      qt6Packages.qt5compat
-      catalyst
-      protobuf
-    ];
+    buildInputs =
+      [
+        qt6Packages.qttools
+        qt6Packages.qt5compat
+        protobuf
+      ]
+      ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      ];
 
     propagatedBuildInputs = [
       (python3Packages.mkPythonMetaPackage {

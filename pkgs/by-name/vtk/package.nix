@@ -2,7 +2,6 @@
   lib,
   newScope,
   stdenv,
-  llvmPackages_18,
   fetchurl,
   fetchpatch2,
   cmake,
@@ -64,7 +63,7 @@
   opencascade-occt,
 
   # threading
-  tbb,
+  tbb_2021_11,
 
   # rendering
   freetype,
@@ -94,7 +93,8 @@
   mpiSupport ? false,
   pythonSupport ? false,
   tkSupport ? pythonSupport,
-  smpToolsBackend ? if stdenv.hostPlatform.isLinux then "TBB" else "STDThread",
+  # smpToolsBackend ? if stdenv.hostPlatform.isLinux then "TBB" else "Sequential",
+  smpToolsBackend ? "TBB",
   preferGLES ? false,
 
   # passthru.tests
@@ -117,13 +117,14 @@ let
       null;
   vtkPackages = lib.makeScope newScope (self: {
     inherit
-      tbb
+      # tbb
       mpi
       mpiSupport
       python3Packages
       pythonSupport
       ;
 
+    tbb = tbb_2021_11;
     hdf5 = hdf5.override {
       inherit mpi mpiSupport;
       cppSupport = !mpiSupport;
@@ -134,13 +135,6 @@ let
     adios2 = self.callPackage adios2.override { };
   });
   vtkBool = feature: bool: lib.cmakeFeature feature "${if bool then "YES" else "NO"}";
-  # While char_traits<uint8_t> is not officially supported by any C++
-  # standard, gcc and libcxx(<19) have extensions to support the type. The
-  # C++20 standard introduces support for char_traits<char8_t>.
-  # Starting with libcxx-19, the extensions to support char_traits<T> where
-  # T is not a type specified by a C++ standard has been dropped. See
-  # https://reviews.llvm.org/D138307 for details.
-  buildStdenv = if stdenv.cc.isClang then llvmPackages_18.stdenv else stdenv;
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "vtk";
@@ -167,6 +161,9 @@ stdenv.mkDerivation (finalAttrs: {
     ''
     + lib.optionalString stdenv.hostPlatform.isDarwin ''
       sed -i '/set(VTK_USE_X "@VTK_USE_X@")/a set(VTK_USE_COCOA "@VTK_USE_COCOA@")' CMake/vtk-config.cmake.in
+
+      substituteInPlace Rendering/OpenGL2/vtkOpenGLRenderWindow.cxx \
+        --replace-fail "this->SymbolLoader.LoadFunction != nullptr" "false"
     '';
 
   nativeBuildInputs =
@@ -189,7 +186,6 @@ stdenv.mkDerivation (finalAttrs: {
       alembic
       imath
       c-blosc
-      tbb # should be propagated by openvdb
       unixODBC
       postgresql
       libmysqlclient
@@ -212,7 +208,6 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optionals (withQt5 || withQt6) [
       qtPackages.qttools
-      qtPackages.qtdeclarative
     ]
     ++ lib.optional mpiSupport mpi
     ++ lib.optional tkSupport tk;
@@ -249,9 +244,9 @@ stdenv.mkDerivation (finalAttrs: {
       vtkPackages.adios2
       vtkPackages.netcdf
       vtkPackages.catalyst
+      vtkPackages.tbb
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
-      tbb
       libX11
       gl2ps
     ]
@@ -342,7 +337,7 @@ stdenv.mkDerivation (finalAttrs: {
     ''
     # libvtkglad.so will find and load libGL.so at runtime.
     + lib.optionalString stdenv.hostPlatform.isLinux ''
-      patchelf --add-rpath ${lib.getLib libGL}/lib lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
+      patchelf --add-rpath ${lib.getLib libGL}/lib lib/libvtkglad.so
     '';
 
   __darwinAllowLocalNetworking = finalAttrs.finalPackage.doCheck && mpiSupport;
