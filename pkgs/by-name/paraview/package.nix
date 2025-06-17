@@ -7,7 +7,6 @@
   ninja,
   protobuf,
   python3Packages,
-  libsForQt5,
   qt6Packages,
 }:
 stdenv.mkDerivation (
@@ -24,8 +23,7 @@ stdenv.mkDerivation (
       hash = "sha256-y9ecUYkR44s5zC+scIxP3VS+O0sUm7ZBjCZ7Mxr4Y94=";
       postFetch = ''
         mv $out/share/paraview-${lib.versions.majorMinor finalAttrs.version}/examples .
-        rm $out -rf
-        mkdir -p $out
+        rm $out/* -rf
         mv examples $out
       '';
     };
