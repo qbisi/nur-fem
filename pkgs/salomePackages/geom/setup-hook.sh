@@ -1,0 +1,1 @@
+export GEOM_ROOT_DIR=@out@

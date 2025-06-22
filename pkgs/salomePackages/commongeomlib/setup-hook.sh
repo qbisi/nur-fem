@@ -1,0 +1,1 @@
+export CommonGeomLib_ROOT_DIR=@out@
