@@ -1,1 +1,0 @@
-export KERNEL_ROOT_DIR=@out@

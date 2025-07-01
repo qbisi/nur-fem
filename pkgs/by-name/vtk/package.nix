@@ -63,7 +63,7 @@
   opencascade-occt,
 
   # threading
-  tbb_2021_11,
+  tbb,
 
   # rendering
   freetype,
@@ -81,7 +81,7 @@
 
   # check
   ctestCheckHook,
-  headlessDisplayHook2,
+  headlessDisplayHook,
   mpiCheckPhaseHook,
 
   # custom options
@@ -92,21 +92,10 @@
   # we set mpiSupport to false by default.
   mpiSupport ? false,
   pythonSupport ? false,
-  tkSupport ? pythonSupport,
-  # smpToolsBackend ? if stdenv.hostPlatform.isLinux then "TBB" else "Sequential",
-  smpToolsBackend ? "TBB",
-  preferGLES ? false,
 
   # passthru.tests
   testers,
 }:
-assert tkSupport -> pythonSupport;
-assert lib.assertMsg (builtins.elem smpToolsBackend [
-  "Sequential"
-  "STDThread"
-  "OpenMP"
-  "TBB"
-]) "smpToolsBackend must be one of Sequential, STDThread, OpenMP and TBB";
 let
   qtPackages =
     if withQt6 then
@@ -117,14 +106,13 @@ let
       null;
   vtkPackages = lib.makeScope newScope (self: {
     inherit
-      # tbb
+      tbb
       mpi
       mpiSupport
       python3Packages
       pythonSupport
       ;
 
-    tbb = tbb_2021_11;
     hdf5 = hdf5.override {
       inherit mpi mpiSupport;
       cppSupport = !mpiSupport;
@@ -138,32 +126,40 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "vtk";
-  version = "9.5.0.rc2";
+  version = "9.5.0";
 
   srcs =
     [
       (fetchurl {
         url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTK-${finalAttrs.version}.tar.gz";
-        hash = "sha256-US1T9x3BciDYnerl2D9XktPPfIwr3wlqdtjAexZPHkw=";
+        hash = "sha256-BK6GJGuVV8a2GvvFNKbfCZJE+8jzk3+C5rwFcJU6+H0=";
       })
     ]
     ++ lib.optionals finalAttrs.finalPackage.doCheck [
       (fetchurl {
         url = "https://www.vtk.org/files/release/${lib.versions.majorMinor finalAttrs.version}/VTKData-${finalAttrs.version}.tar.gz";
-        hash = "sha256-dbY/TYGD/QeNchcOY+7EgCwgSfZ/upGtA99RciShl6Y=";
+        hash = "sha256-kc091jgkMOfKu+yJafLvD46csjylDnsKcBikKeZpXK8=";
       })
     ];
 
-  postPatch =
-    ''
-      substituteInPlace Wrapping/Python/vtkmodules/tk/vtkLoadPythonTkWidgets.py \
-        --replace-fail 'filename = prefix+name+extension' 'filename = prefix+modname+extension'
-    ''
-    + lib.optionalString stdenv.hostPlatform.isDarwin ''
-      sed -i '/set(VTK_USE_X "@VTK_USE_X@")/a set(VTK_USE_COCOA "@VTK_USE_COCOA@")' CMake/vtk-config.cmake.in
+  patches = [
+    # https://gitlab.kitware.com/vtk/vtk/-/issues/19699
+    (fetchpatch2 {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/6b4f7b853675c63e4831c366ca8f78e320c1bfb5.patch?full_index=1";
+      hash = "sha256-7WJhUh4DRt9ZEf5+TVbb8swtmh0JL17BXhVVLiYTcpc=";
+    })
+    # https://gitlab.kitware.com/vtk/vtk/-/issues/19705
+    (fetchpatch2 {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ce10dfe82ffa19c8108885625a6f8b3f980bed3b.patch?full_index=1";
+      hash = "sha256-FVdL/raib6HwEk2sB3rkT2vSiCNjiFN93tYQqiP+R9Q=";
+    })
+  ];
 
-      substituteInPlace Rendering/OpenGL2/vtkOpenGLRenderWindow.cxx \
-        --replace-fail "this->SymbolLoader.LoadFunction != nullptr" "false"
+  postPatch =
+    # https://discourse.paraview.org/t/possible-race-condition-in-qvtkopenglnativewidget-initializegl/16823
+    lib.optionalString stdenv.hostPlatform.isDarwin ''
+      substituteInPlace GUISupport/Qt/QVTKOpenGLNativeWidget.cxx \
+        --replace-fail "this->RenderWindow->SetOpenGLSymbolLoader(loadFunc, this->context());" ""
     '';
 
   nativeBuildInputs =
@@ -206,11 +202,9 @@ stdenv.mkDerivation (finalAttrs: {
       libXrender
       libXcursor
     ]
-    ++ lib.optionals (withQt5 || withQt6) [
-      qtPackages.qttools
-    ]
+    ++ lib.optional (withQt5 || withQt6) qtPackages.qttools
     ++ lib.optional mpiSupport mpi
-    ++ lib.optional tkSupport tk;
+    ++ lib.optional pythonSupport tk;
 
   # propagated by vtk-config.cmake
   propagatedBuildInputs =
@@ -257,8 +251,8 @@ stdenv.mkDerivation (finalAttrs: {
         dependencies =
           with python3Packages;
           [
-            wslink
             numpy
+            wslink
             matplotlib
           ]
           ++ lib.optional mpiSupport (mpi4py.override { inherit mpi; });
@@ -271,7 +265,10 @@ stdenv.mkDerivation (finalAttrs: {
     export QT_PLUGIN_PATH=${lib.getBin qt5.qtbase}/${qt5.qtbase.qtPluginPrefix}
   '';
 
-  env.CMAKE_PREFIX_PATH = "${lib.getDev openvdb}/lib/cmake/OpenVDB";
+  env = {
+    CMAKE_PREFIX_PATH = "${lib.getDev openvdb}/lib/cmake/OpenVDB";
+    NIX_LDFLAGS = "-L${lib.getLib libmysqlclient}/lib/mariadb";
+  };
 
   cmakeFlags =
     [
@@ -285,7 +282,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_WRAP_SERIALIZATION" true)
       (lib.cmakeBool "VTK_BUILD_ALL_MODULES" true)
       (lib.cmakeBool "VTK_VERSIONED_INSTALL" false)
-      (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" smpToolsBackend)
+      (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" "TBB")
 
       # use system packages if possible
       (lib.cmakeBool "VTK_USE_EXTERNAL" true)
@@ -309,11 +306,9 @@ stdenv.mkDerivation (finalAttrs: {
       (vtkBool "VTK_GROUP_ENABLE_Qt" (withQt6 || withQt5))
       (lib.cmakeFeature "VTK_QT_VERSION" "Auto") # will search for Qt6 first
 
-      # tkSupport
-      (lib.cmakeBool "VTK_USE_TK" tkSupport)
-      (vtkBool "VTK_GROUP_ENABLE_Tk" tkSupport)
-
       # pythonSupport
+      (lib.cmakeBool "VTK_USE_TK" pythonSupport)
+      (vtkBool "VTK_GROUP_ENABLE_Tk" pythonSupport)
       (lib.cmakeBool "VTK_WRAP_PYTHON" pythonSupport)
       (lib.cmakeBool "VTK_BUILD_PYI_FILES" pythonSupport)
       (lib.cmakeFeature "VTK_PYTHON_VERSION" "3")
@@ -321,11 +316,6 @@ stdenv.mkDerivation (finalAttrs: {
       # mpiSupport
       (lib.cmakeBool "VTK_USE_MPI" mpiSupport)
       (vtkBool "VTK_GROUP_ENABLE_MPI" mpiSupport)
-    ]
-    ++ lib.optionals preferGLES [
-      (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingExternal" false)
-      (vtkBool "VTK_MODULE_ENABLE_VTK_RenderingVR" false)
-      (lib.cmakeBool "VTK_OPENGL_USE_GLES" true)
     ]
     ++ lib.optionals finalAttrs.finalPackage.doCheck [
       (lib.cmakeFeature "VTK_BUILD_TESTING" "ON")
@@ -340,11 +330,9 @@ stdenv.mkDerivation (finalAttrs: {
       patchelf --add-rpath ${lib.getLib libGL}/lib lib/libvtkglad.so
     '';
 
-  __darwinAllowLocalNetworking = finalAttrs.finalPackage.doCheck && mpiSupport;
-
   nativeCheckInputs = [
     ctestCheckHook
-    headlessDisplayHook2
+    headlessDisplayHook
   ] ++ lib.optional mpiSupport mpiCheckPhaseHook;
 
   # tests are done in passthru.tests.withCheck
@@ -360,19 +348,19 @@ stdenv.mkDerivation (finalAttrs: {
   dontWrapQtApps = true;
 
   postFixup =
-    # remove thirdparty cmake patches
+    # Remove thirdparty find module that have been provided in nixpkgs
     ''
       rm -rf $out/lib/cmake/vtk/patches
+      rm $out/lib/cmake/vtk/Find{double-conversion,EXPAT,Freetype,utf8cpp,LibXml2,FontConfig}.cmake
     ''
     + lib.optionalString stdenv.hostPlatform.isLinux ''
-      patchelf --add-rpath ${lib.getLib libGL}/lib $out/lib/libvtkglad${stdenv.hostPlatform.extensions.sharedLibrary}
+      patchelf --add-rpath ${lib.getLib libGL}/lib $out/lib/libvtkglad.so
     '';
 
   passthru = {
     inherit
       pythonSupport
       mpiSupport
-      tkSupport
       ;
 
     vtkPackages = vtkPackages.overrideScope (
@@ -387,23 +375,33 @@ stdenv.mkDerivation (finalAttrs: {
 
         package = finalAttrs.finalPackage;
 
-        nativeBuildInputs = lib.optional (withQt5 || withQt6) [
+        nativeBuildInputs = lib.optionals (withQt5 || withQt6) [
           qtPackages.qttools
           qtPackages.wrapQtAppsHook
         ];
       };
-      withCheck = finalAttrs.finalPackage.overrideAttrs {
-        doCheck = true;
+      # Most checks on the Darwin platform fail with:
+      #   Terminating app due to uncaught exception 'NSInternalInconsistencyException',
+      #   reason: 'Critical error: required built-in appearance SystemAppearance not found'.
+      # This is possibly due to the Nix sandbox restricting access to system resources, e.g.:
+      #   /System/Library/CoreServices/SystemAppearance.bundle
+      #   /System/Library/Frameworks/OpenGL.framework/OpenGL
+      withCheck = lib.optionalAttrs stdenv.hostPlatform.isLinux (
+        finalAttrs.finalPackage.overrideAttrs {
+          doCheck = true;
 
-        disabledTests = [
-          # the test fails and is visually not acceptable
-          "VTK::RenderingExternalCxx-TestGLUTRenderWindow"
-          # the test fails but is visually acceptable
-          "VTK::InteractionWidgetsPython-TestTensorWidget2"
-          # outputs uniform font style throughout (expect regular, italic, bold, bold-italic)
-          "VTK::RenderingFreeTypeFontConfigCxx-TestSystemFontRendering"
-        ];
-      };
+          disabledTests = [
+            # ERR| vtkXOpenGLRenderWindow (0x2233a60): Could not find a decent config
+            "VTK::RenderingOpenGL2Cxx-TestFluidMapper"
+            # the test fails and is visually not acceptable
+            "VTK::RenderingExternalCxx-TestGLUTRenderWindow"
+            # the test fails but is visually acceptable
+            "VTK::InteractionWidgetsPython-TestTensorWidget2"
+            # outputs uniform font style throughout (expect regular, italic, bold, bold-italic)
+            "VTK::RenderingFreeTypeFontConfigCxx-TestSystemFontRendering"
+          ];
+        }
+      );
     };
   };
 
@@ -416,6 +414,5 @@ stdenv.mkDerivation (finalAttrs: {
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ qbisi ];
     platforms = lib.platforms.unix;
-    broken = smpToolsBackend == "OpenMP";
   };
 })

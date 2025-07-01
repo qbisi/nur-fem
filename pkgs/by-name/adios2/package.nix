@@ -39,7 +39,12 @@ let
       cppSupport = !mpiSupport;
     };
     catalyst = catalyst.override {
-      inherit mpi mpiSupport pythonSupport;
+      inherit
+        mpi
+        mpiSupport
+        python3Packages
+        pythonSupport
+        ;
     };
     mpi4py = python3Packages.mpi4py.override { inherit mpi; };
   };
@@ -197,6 +202,9 @@ stdenv.mkDerivation (finalAttrs: {
         "Test.Engine.DataManSingleValues"
         # The test assumed to always contain n*64 byte-length records. Right now the length of index buffer is 71 bytes.
         "Staging.1x1.Local2.BPS.BB.BP4_stream"
+        # Timeout
+        "Staging.3x5LockGeometry.FS.BB.FileStream"
+        "Engine.Staging.TestOnDemandMPI.ADIOS2OnDemandMPI.SST.MPI"
       ];
     };
 

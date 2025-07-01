@@ -1,1 +1,0 @@
-export SMESH_ROOT_DIR=@out@

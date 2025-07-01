@@ -1,1 +1,0 @@
-export CONFIGURATION_ROOT_DIR=@out@

@@ -1,1 +1,0 @@
-export MEDCOUPLING_ROOT_DIR=@out@
