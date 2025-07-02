@@ -153,15 +153,13 @@ stdenv.mkDerivation (finalAttrs: {
       url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ce10dfe82ffa19c8108885625a6f8b3f980bed3b.patch?full_index=1";
       hash = "sha256-FVdL/raib6HwEk2sB3rkT2vSiCNjiFN93tYQqiP+R9Q=";
     })
+  ] ++ lib.optionals stdenv.hostPlatform.isDarwin[
+    # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12262
+    (fetchpatch2 {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/e7d62b929ce4eac60aab14e2042a7351951d7b21.patch?full_index=1";
+      hash = "sha256-M22NSQSDDrJaESt0Fn01xgCCBd/DuHP27a298cONB1o=";
+    })
   ];
-
-  postPatch =
-    # https://discourse.paraview.org/t/possible-race-condition-in-qvtkopenglnativewidget-initializegl/16823
-    lib.optionalString stdenv.hostPlatform.isDarwin ''
-      substituteInPlace GUISupport/Qt/QVTKOpenGLNativeWidget.cxx \
-        --replace-fail "if (auto* symbol = context->getProcAddress(name))" \
-        "auto* symbol = context->getProcAddress(name); if (symbol)"
-    '';
 
   nativeBuildInputs =
     [
