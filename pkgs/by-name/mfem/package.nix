@@ -82,6 +82,8 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeFeature "SuperLUDist_REQUIRED_PACKAGES" "")
   ];
 
+  __darwinAllowLocalNetworking = true;
+
   preCheck = lib.optionalString stdenv.hostPlatform.isDarwin ''
     export DYLD_LIBRARY_PATH=${hypre}/lib:$DYLD_LIBRARY_PATH
   '';

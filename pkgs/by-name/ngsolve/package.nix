@@ -146,6 +146,8 @@ stdenv.mkDerivation (finalAttrs: {
     wrapProgram  $out/bin/ngspy --set PYTHONPATH "${wrapPythonPath}:\$PYTHONPATH"
   '';
 
+  __darwinAllowLocalNetworking = true;
+
   doInstallCheck = true;
 
   installCheckTarget = "test";

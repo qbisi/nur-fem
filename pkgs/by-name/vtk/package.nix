@@ -159,7 +159,8 @@ stdenv.mkDerivation (finalAttrs: {
     # https://discourse.paraview.org/t/possible-race-condition-in-qvtkopenglnativewidget-initializegl/16823
     lib.optionalString stdenv.hostPlatform.isDarwin ''
       substituteInPlace GUISupport/Qt/QVTKOpenGLNativeWidget.cxx \
-        --replace-fail "this->RenderWindow->SetOpenGLSymbolLoader(loadFunc, this->context());" ""
+        --replace-fail "if (auto* symbol = context->getProcAddress(name))" \
+        "auto* symbol = context->getProcAddress(name); if (symbol)"
     '';
 
   nativeBuildInputs =
