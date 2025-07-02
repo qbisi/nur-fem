@@ -31,6 +31,8 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "RAJA_ENABLE_TESTS" finalAttrs.finalPackage.doCheck)
   ];
 
+  __darwinAllowLocalNetworking = true;
+
   doCheck = true;
 
   meta = {
