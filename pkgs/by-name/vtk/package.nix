@@ -36,6 +36,7 @@
   openslide,
 
   # io modules
+  cgns,
   adios2,
   libLAS,
   libgeotiff,
@@ -66,6 +67,7 @@
   tbb,
 
   # rendering
+  viskores,
   freetype,
   fontconfig,
   libX11,
@@ -121,6 +123,8 @@ let
     netcdf = self.callPackage netcdf.override { };
     catalyst = self.callPackage catalyst.override { };
     adios2 = self.callPackage adios2.override { };
+    cgns = self.callPackage cgns.override { };
+    viskores = self.callPackage viskores.override { };
   });
   vtkBool = feature: bool: lib.cmakeFeature feature "${if bool then "YES" else "NO"}";
 in
@@ -142,24 +146,26 @@ stdenv.mkDerivation (finalAttrs: {
       })
     ];
 
-  patches = [
-    # https://gitlab.kitware.com/vtk/vtk/-/issues/19699
-    (fetchpatch2 {
-      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/6b4f7b853675c63e4831c366ca8f78e320c1bfb5.patch?full_index=1";
-      hash = "sha256-7WJhUh4DRt9ZEf5+TVbb8swtmh0JL17BXhVVLiYTcpc=";
-    })
-    # https://gitlab.kitware.com/vtk/vtk/-/issues/19705
-    (fetchpatch2 {
-      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ce10dfe82ffa19c8108885625a6f8b3f980bed3b.patch?full_index=1";
-      hash = "sha256-FVdL/raib6HwEk2sB3rkT2vSiCNjiFN93tYQqiP+R9Q=";
-    })
-  ] ++ lib.optionals stdenv.hostPlatform.isDarwin[
-    # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12262
-    (fetchpatch2 {
-      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/e7d62b929ce4eac60aab14e2042a7351951d7b21.patch?full_index=1";
-      hash = "sha256-M22NSQSDDrJaESt0Fn01xgCCBd/DuHP27a298cONB1o=";
-    })
-  ];
+  patches =
+    [
+      # https://gitlab.kitware.com/vtk/vtk/-/issues/19699
+      (fetchpatch2 {
+        url = "https://gitlab.kitware.com/vtk/vtk/-/commit/6b4f7b853675c63e4831c366ca8f78e320c1bfb5.patch?full_index=1";
+        hash = "sha256-7WJhUh4DRt9ZEf5+TVbb8swtmh0JL17BXhVVLiYTcpc=";
+      })
+      # https://gitlab.kitware.com/vtk/vtk/-/issues/19705
+      (fetchpatch2 {
+        url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ce10dfe82ffa19c8108885625a6f8b3f980bed3b.patch?full_index=1";
+        hash = "sha256-FVdL/raib6HwEk2sB3rkT2vSiCNjiFN93tYQqiP+R9Q=";
+      })
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12262
+      (fetchpatch2 {
+        url = "https://gitlab.kitware.com/vtk/vtk/-/commit/e7d62b929ce4eac60aab14e2042a7351951d7b21.patch?full_index=1";
+        hash = "sha256-M22NSQSDDrJaESt0Fn01xgCCBd/DuHP27a298cONB1o=";
+      })
+    ];
 
   nativeBuildInputs =
     [
@@ -234,9 +240,11 @@ stdenv.mkDerivation (finalAttrs: {
       cli11
       openslide
       vtkPackages.hdf5
+      vtkPackages.cgns
       vtkPackages.adios2
       vtkPackages.netcdf
       vtkPackages.catalyst
+      vtkPackages.viskores
       vtkPackages.tbb
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
@@ -287,12 +295,10 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_USE_EXTERNAL" true)
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_fast_float" false) # required version incompatible
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_pegtl" false) # required version incompatible
-      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_cgns" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_ioss" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_token" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_fmt" false) # prefer vendored fmt
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_scn" false) # missing in nixpkgs
-      (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_vtkviskores" false) # missing in nixpkgs
       (lib.cmakeBool "VTK_MODULE_USE_EXTERNAL_VTK_gl2ps" stdenv.hostPlatform.isLinux) # external gl2ps causes failure linking to macOS OpenGL.framework
 
       # Rendering

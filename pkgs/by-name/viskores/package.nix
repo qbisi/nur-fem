@@ -50,7 +50,7 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   meta = {
-    description = "Scalable Library for Eigenvalue Problem Computations";
+    description = "Visualization library for many-threaded devices";
     homepage = "https://github.com/Viskores/viskores";
     changelog = "https://github.com/Viskores/viskores/releases/tag/${finalAttrs.src.tag}";
     license = with lib.licenses; [ free ];
