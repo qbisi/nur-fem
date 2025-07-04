@@ -75,14 +75,11 @@ stdenv.mkDerivation (
       qt6Packages.wrapQtAppsHook
     ];
 
-    buildInputs =
-      [
-        qt6Packages.qttools
-        qt6Packages.qt5compat
-        protobuf
-      ]
-      ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      ];
+    buildInputs = [
+      qt6Packages.qttools
+      qt6Packages.qt5compat
+      protobuf
+    ];
 
     propagatedBuildInputs = [
       (python3Packages.mkPythonMetaPackage {
