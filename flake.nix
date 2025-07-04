@@ -72,7 +72,7 @@
                   directory = ./pkgs/by-name;
                 };
                 python312Packages = lib.packagesFromDirectoryRecursive {
-                  inherit (self'.legacyPackages.python312Packages) callPackage;
+                  inherit (self'.legacyPackages.python3Packages) callPackage;
                   directory = ./pkgs/python-by-name;
                 };
               };
