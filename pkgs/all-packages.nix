@@ -7,11 +7,6 @@
       directory = ./by-name;
     }
     // {
-      salomePackages = lib.packagesFromDirectoryRecursive {
-        inherit (self) callPackage;
-        directory = ./salomePackages;
-      };
-
       python312 = pkgs.python312.override (old: {
         packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) self.pythonOverrides;
       });
