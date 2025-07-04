@@ -20,13 +20,13 @@
         packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) self.pythonOverrides;
       });
 
-      python3 = self.python312;
+      python3 = self.python313;
 
       python312Packages = lib.recurseIntoAttrs self.python312.pkgs;
 
       python313Packages = lib.recurseIntoAttrs self.python313.pkgs;
 
-      python3Packages = self.python312Packages;
+      python3Packages = self.python313Packages;
 
       pythonOverrides =
         final: prev:
