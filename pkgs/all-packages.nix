@@ -11,7 +11,7 @@
         packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) self.pythonOverrides;
       });
 
-      python313 = pkgs.python312.override (old: {
+      python313 = pkgs.python313.override (old: {
         packageOverrides = lib.composeExtensions (old.packageOverrides or (_: _: { })) self.pythonOverrides;
       });
 
