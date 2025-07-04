@@ -3,7 +3,7 @@
   newScope,
   stdenv,
   fetchurl,
-  fetchpatch,
+  fetchpatch2,
   cmake,
   pkg-config,
 
@@ -149,19 +149,19 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     # https://gitlab.kitware.com/vtk/vtk/-/issues/19699
-    (fetchpatch {
-      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/6b4f7b853675c63e4831c366ca8f78e320c1bfb5.patch?full_index=1";
-      hash = "sha256-hLKuVrckLtnuXiKpdRI9gnX6FrNIj0niTbxGvagrW38=";
+    (fetchpatch2 {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/6b4f7b853675c63e4831c366ca8f78e320c1bfb5.diff";
+      hash = "sha256-hWJc5RxW6iK+W/rTxp2GUWKcm/2+oxbP5nVZ0EUSKHE=";
     })
     # https://gitlab.kitware.com/vtk/vtk/-/issues/19705
-    (fetchpatch {
-      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ce10dfe82ffa19c8108885625a6f8b3f980bed3b.patch?full_index=1";
-      hash = "sha256-ceqpJoNBUcN44XfLgeNrHOPSSWOt25Hd5JVyYaBJNII=";
+    (fetchpatch2 {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ce10dfe82ffa19c8108885625a6f8b3f980bed3b.diff";
+      hash = "sha256-kyPM0whL4WeaV27sNM1fbbs5kwMYn+9E561HtvnwHRc=";
     })
     # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12262
-    (fetchpatch {
-      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ab6eb20a574e316cbb5ff56952b3dcf4e39d3d5a.patch?full_index=1";
-      hash = "sha256-PISVPg+TYUsQoNcQK41Z0zufPLmZPJBGxENZXVIi+20=";
+    (fetchpatch2 {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ab6eb20a574e316cbb5ff56952b3dcf4e39d3d5a.diff";
+      hash = "sha256-BinSv8sPqpAEcgkn8trnCPv2snR9MGcA8rkVflAhc5w=";
     })
   ];
 
