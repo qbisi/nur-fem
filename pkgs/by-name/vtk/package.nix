@@ -65,6 +65,7 @@
 
   # threading
   tbb,
+  llvmPackages,
 
   # rendering
   viskores,
@@ -244,6 +245,9 @@ stdenv.mkDerivation (finalAttrs: {
       vtkPackages.viskores
       vtkPackages.tbb
     ]
+    ++ lib.optionals stdenv.cc.isClang [
+      llvmPackages.openmp
+    ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       libX11
       gl2ps
@@ -286,6 +290,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "VTK_WRAP_SERIALIZATION" true)
       (lib.cmakeBool "VTK_BUILD_ALL_MODULES" true)
       (lib.cmakeBool "VTK_VERSIONED_INSTALL" false)
+      (lib.cmakeBool "VTK_SMP_ENABLE_OPENMP" true)
       (lib.cmakeFeature "VTK_SMP_IMPLEMENTATION_TYPE" "TBB")
 
       # use system packages if possible
