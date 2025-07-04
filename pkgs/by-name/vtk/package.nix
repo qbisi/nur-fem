@@ -3,7 +3,7 @@
   newScope,
   stdenv,
   fetchurl,
-  fetchpatch2,
+  fetchpatch,
   cmake,
   pkg-config,
 
@@ -146,26 +146,23 @@ stdenv.mkDerivation (finalAttrs: {
       })
     ];
 
-  patches =
-    [
-      # https://gitlab.kitware.com/vtk/vtk/-/issues/19699
-      (fetchpatch2 {
-        url = "https://gitlab.kitware.com/vtk/vtk/-/commit/6b4f7b853675c63e4831c366ca8f78e320c1bfb5.patch?full_index=1";
-        hash = "sha256-7WJhUh4DRt9ZEf5+TVbb8swtmh0JL17BXhVVLiYTcpc=";
-      })
-      # https://gitlab.kitware.com/vtk/vtk/-/issues/19705
-      (fetchpatch2 {
-        url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ce10dfe82ffa19c8108885625a6f8b3f980bed3b.patch?full_index=1";
-        hash = "sha256-FVdL/raib6HwEk2sB3rkT2vSiCNjiFN93tYQqiP+R9Q=";
-      })
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12262
-      (fetchpatch2 {
-        url = "https://gitlab.kitware.com/vtk/vtk/-/commit/e7d62b929ce4eac60aab14e2042a7351951d7b21.patch?full_index=1";
-        hash = "sha256-M22NSQSDDrJaESt0Fn01xgCCBd/DuHP27a298cONB1o=";
-      })
-    ];
+  patches = [
+    # https://gitlab.kitware.com/vtk/vtk/-/issues/19699
+    (fetchpatch {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/6b4f7b853675c63e4831c366ca8f78e320c1bfb5.patch?full_index=1";
+      hash = "sha256-hLKuVrckLtnuXiKpdRI9gnX6FrNIj0niTbxGvagrW38=";
+    })
+    # https://gitlab.kitware.com/vtk/vtk/-/issues/19705
+    (fetchpatch {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ce10dfe82ffa19c8108885625a6f8b3f980bed3b.patch?full_index=1";
+      hash = "sha256-ceqpJoNBUcN44XfLgeNrHOPSSWOt25Hd5JVyYaBJNII=";
+    })
+    # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12262
+    (fetchpatch {
+      url = "https://gitlab.kitware.com/vtk/vtk/-/commit/ab6eb20a574e316cbb5ff56952b3dcf4e39d3d5a.patch?full_index=1";
+      hash = "sha256-PISVPg+TYUsQoNcQK41Z0zufPLmZPJBGxENZXVIi+20=";
+    })
+  ];
 
   nativeBuildInputs =
     [
