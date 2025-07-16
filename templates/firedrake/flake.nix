@@ -73,6 +73,8 @@
                 rm .venv -rf
                 ln -s ${python-env} .venv
                 export VIRTUAL_ENV=$HOME
+                export FIREDRAKE_TSFC_KERNEL_CACHE_DIR=$VIRTUAL_ENV/.cache/tsfc
+                export PYOP2_CACHE_DIR=$VIRTUAL_ENV/.cache/pyop2
               '';
             };
         };
