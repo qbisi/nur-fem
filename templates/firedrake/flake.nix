@@ -9,12 +9,8 @@
   };
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nur-fem.url = "github:qbisi/nur-fem";
-    flake-parts = {
-      url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
-    };
+    flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
   outputs =
@@ -37,16 +33,13 @@
         }:
         {
           _module.args = {
-            pkgs = import inputs.nixpkgs {
+            pkgs = import inputs.nur-fem {
               inherit system;
               overlays = [
-                inputs.nur-fem.overlays.default
                 (final: prev: {
                   petsc = prev.petsc.override {
-                    # custom petsc configuration
-                    # mpi = prev.mpich;
-                    # scalarType = "complex";
                     # withFullDeps = true;
+                    # scalarType = "complex";
                     # debug = false;
                   };
                 })
@@ -62,25 +55,16 @@
               python-env = pkgs.jupyter.withPackages (
                 ps: with ps; [
                   firedrake
+                  scipy
                   matplotlib
+                  notebook
                   ipykernel
-                  ipympl
-                  vtk
-
-                  # add extra python module here
-                  # available python module can be searched on https://search.nixos.org/
-                  pyvisata
-                  pyvistaqt
                 ]
               );
             in
             pkgs.mkShell {
               packages = [
                 python-env
-
-                # add extra pkgs here
-                pkgs.nixGLMesaHook   # required for running grphic program via ssh x11 forwarding
-                # pkgs.paraview
               ];
 
               env.OMP_NUM_THREADS = 1;
